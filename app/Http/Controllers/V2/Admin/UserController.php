@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V2\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserGenerate;
 use App\Http\Requests\Admin\UserSendMail;
+use App\Http\Requests\Admin\UserSetInvite;
 use App\Http\Requests\Admin\UserUpdate;
 use App\Jobs\SendEmailJob;
 use App\Models\Plan;
@@ -651,6 +652,52 @@ class UserController extends Controller
             return $this->fail([500, '处理失败']);
         }
         // Full refresh not implemented.
+        return $this->success(true);
+    }
+
+    public function setInviteUser(UserSetInvite $request)
+    {
+        $params = $request->validated();
+        $user = User::find($params['id']);
+
+        if (!$user) {
+            return $this->fail([400202, '用户不存在']);
+        }
+
+        $inviteUserId = null;
+        if (!empty($params['invite_user_id'])) {
+            $inviteUser = User::find($params['invite_user_id']);
+            if (!$inviteUser) {
+                return $this->fail([400202, '邀请用户不存在']);
+            }
+            if ($inviteUser->id === $user->id) {
+                return $this->fail([400201, '邀请用户不能是当前用户']);
+            }
+            $inviteUserId = $inviteUser->id;
+        } elseif (
+            array_key_exists('invite_user_email', $params)
+            && $params['invite_user_email'] !== null
+            && $params['invite_user_email'] !== ''
+        ) {
+            $inviteUser = User::byEmail($params['invite_user_email'])->first();
+            if (!$inviteUser) {
+                return $this->fail([400202, '邀请用户不存在']);
+            }
+            if ($inviteUser->id === $user->id) {
+                return $this->fail([400201, '邀请用户不能是当前用户']);
+            }
+            $inviteUserId = $inviteUser->id;
+        }
+
+        try {
+            if (!$user->update(['invite_user_id' => $inviteUserId])) {
+                return $this->fail([500, '保存失败']);
+            }
+        } catch (\Exception $e) {
+            Log::error($e);
+            return $this->fail([500, '保存失败']);
+        }
+
         return $this->success(true);
     }
 

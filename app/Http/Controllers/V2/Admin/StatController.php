@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V2\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StatGetRanking;
 use App\Models\CommissionLog;
 use App\Models\Order;
 use App\Models\Server;
@@ -427,6 +428,14 @@ class StatController extends Controller
      * @param Request $request
      * @return array
      */
+    public function getRanking(StatGetRanking $request)
+    {
+        $params = $request->validated();
+        $data = $this->service->getRanking($params['type'], $params['limit'] ?? 20);
+
+        return $this->success($data);
+    }
+
     public function getTrafficRank(Request $request)
     {
         $request->validate([

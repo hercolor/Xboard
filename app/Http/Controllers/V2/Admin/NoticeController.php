@@ -53,6 +53,15 @@ class NoticeController extends Controller
         return $this->success(true);
     }
 
+    public function update(NoticeSave $request)
+    {
+        if (!$request->filled("id")) {
+            return $this->fail([422, "公告ID不能为空"]);
+        }
+
+        return $this->save($request);
+    }
+
     public function show(NoticeShow $request)
     {
         $notice = Notice::find($request->integer('id'));

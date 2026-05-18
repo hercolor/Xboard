@@ -47,6 +47,23 @@
    - 但存在少量明显断点
    - 再叠加 V1/V2 复用，后续改造必须先清理映射关系
 
+### 2.1 状态更新（2026-05-18，同轮修复后）
+
+在本次审计完成后，已立即补齐 3 个后台兼容入口：
+
+- `V2 Admin /notice/update`
+- `V2 Admin /user/setInviteUser`
+- `V2 Admin /stat/getRanking`
+
+当前重新静态复扫后，**剩余未修复的硬不一致点只剩 1 处**：
+
+- `V1 User /knowledge/getCategory`
+
+因此，这份文档中第 3 节的 4 个问题应理解为：
+
+- **3 个已修复（后台）**
+- **1 个待决策（前台用户口）**
+
 ---
 
 ## 3. 已确认的硬不一致点
@@ -86,6 +103,7 @@ $router->get('/knowledge/getCategory', [KnowledgeController::class, 'getCategory
 原因：
 - 属于用户前台路由
 - 但从仓内文本检索看，当前代码里没有直接引用该路径，疑似死路由
+- **当前状态：待处理**
 
 ---
 
@@ -123,6 +141,7 @@ $router->post('/setInviteUser', [UserController::class, 'setInviteUser']);
 原因：
 - 属于后台写操作
 - 如果后台页面或脚本还调用它，会直接失败
+- **当前状态：已于本轮补兼容方法**
 
 ---
 
@@ -160,6 +179,7 @@ $router->get('/getRanking', [StatController::class, 'getRanking']);
 原因：
 - 这是后台统计口
 - 不是单纯“死名字”，它背后确实有 service 能力，说明是半截功能
+- **当前状态：已于本轮补控制器适配层**
 
 ---
 
@@ -196,6 +216,7 @@ $router->post('/update', [NoticeController::class, 'update']);
 原因：
 - 这个缺口已在第一阶段整理中被确认
 - 更像“可删除历史路由”而不是“缺失业务实现”
+- **当前状态：已于本轮补兼容入口**
 
 ---
 
@@ -318,9 +339,9 @@ use App\Http\Controllers\V1\Server\TrojanTidalabController;
 当前判断：
 
 - `V1 user/knowledge/getCategory` → **大概率删路由** 或改为兼容转发
-- `V2 admin/user/setInviteUser` → **大概率删路由** 或改到 `update` 兼容层
-- `V2 admin/stat/getRanking` → **更像应该补实现**
-- `V2 admin/notice/update` → **大概率删路由**
+- `V2 admin/user/setInviteUser` → **已补兼容层，后续再决定是否保留**
+- `V2 admin/stat/getRanking` → **已补控制器适配层**
+- `V2 admin/notice/update` → **已补兼容层，后续再决定是否删除旧路由**
 
 ---
 
@@ -328,11 +349,9 @@ use App\Http\Controllers\V1\Server\TrojanTidalabController;
 
 建议修复顺序：
 
-1. `V2 notice/update`
-2. `V2 user/setInviteUser`
-3. `V2 stat/getRanking`
-4. `V1 user/knowledge/getCategory`
-5. 最后才评估 `V2 -> V1` 复用拆分
+1. `V1 user/knowledge/getCategory`
+2. `V2 -> V1` 复用拆分评估
+3. 后台兼容路由是否进入下一轮清理（删除旧入口或保留别名）
 
 原因：
 - 后台问题更容易验证
@@ -385,4 +404,3 @@ use App\Http\Controllers\V1\Server\TrojanTidalabController;
 一句话总结：
 
 > 当前 Xboard 的 API 路由层没有大面积失配，但已经确认存在 4 个明确断点，且 `V2` 对 `V1` 的复用仍然很深。第二阶段应先修映射一致性，再谈更大范围的 API 架构升级。
-
