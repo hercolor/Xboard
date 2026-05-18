@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\V2\Admin;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CouponDrop;
 use App\Http\Requests\Admin\CouponGenerate;
-use App\Http\Requests\Admin\CouponSave;
+use App\Http\Requests\Admin\CouponShow;
+use App\Http\Requests\Admin\CouponUpdate;
 use App\Models\Coupon;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CouponController extends Controller
 {
@@ -37,6 +39,7 @@ class CouponController extends Controller
             });
         }
     }
+
     public function fetch(Request $request)
     {
         $current = $request->input('current', 1);
@@ -45,42 +48,38 @@ class CouponController extends Controller
         $this->applyFiltersAndSorts($request, $builder);
         $coupons = $builder
             ->orderBy('created_at', 'desc')
-            ->paginate($pageSize, ["*"], 'page', $current);
+            ->paginate($pageSize, ['*'], 'page', $current);
+
         return $this->paginate($coupons);
     }
 
-    public function update(Request $request)
+    public function update(CouponUpdate $request)
     {
-        $params = $request->validate([
-            'id' => 'required|numeric',
-            'show' => 'nullable|boolean'
-        ], [
-            'id.required' => '优惠券ID不能为空',
-            'id.numeric' => '优惠券ID必须为数字'
-        ]);
+        $params = $request->validated();
+        $couponId = $request->integer('id');
+
+        $coupon = Coupon::find($couponId);
+        if (!$coupon) {
+            return $this->fail([400202, '优惠券不存在']);
+        }
+
         try {
-            DB::beginTransaction();
-            $coupon = Coupon::find($request->input('id'));
-            if (!$coupon) {
-                throw new ApiException(400201, '优惠券不存在');
-            }
-            $coupon->update($params);
-            DB::commit();
+            DB::transaction(function () use ($coupon, $params): void {
+                if (!$coupon->update($params)) {
+                    throw new \RuntimeException('保存失败');
+                }
+            });
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '保存失败']);
         }
+
+        return $this->success(true);
     }
 
-    public function show(Request $request)
+    public function show(CouponShow $request)
     {
-        $request->validate([
-            'id' => 'required|numeric'
-        ], [
-            'id.required' => '优惠券ID不能为空',
-            'id.numeric' => '优惠券ID必须为数字'
-        ]);
-        $coupon = Coupon::find($request->input('id'));
+        $coupon = Coupon::find($request->integer('id'));
         if (!$coupon) {
             return $this->fail([400202, '优惠券不存在']);
         }
@@ -94,25 +93,35 @@ class CouponController extends Controller
     public function generate(CouponGenerate $request)
     {
         if ($request->input('generate_count')) {
-            $this->multiGenerate($request);
-            return;
+            return $this->multiGenerate($request);
         }
 
         $params = $request->validated();
-        if (!$request->input('id')) {
+        $couponId = $request->integer('id');
+
+        if (!$couponId) {
             if (!isset($params['code'])) {
                 $params['code'] = Helper::randomChar(8);
             }
             if (!Coupon::create($params)) {
                 return $this->fail([500, '创建失败']);
             }
-        } else {
-            try {
-                Coupon::find($request->input('id'))->update($params);
-            } catch (\Exception $e) {
-                \Log::error($e);
+
+            return $this->success(true);
+        }
+
+        $coupon = Coupon::find($couponId);
+        if (!$coupon) {
+            return $this->fail([400202, '优惠券不存在']);
+        }
+
+        try {
+            if (!$coupon->update($params)) {
                 return $this->fail([500, '保存失败']);
             }
+        } catch (\Exception $e) {
+            Log::error($e);
+            return $this->fail([500, '保存失败']);
         }
 
         return $this->success(true);
@@ -159,21 +168,15 @@ class CouponController extends Controller
             $endTime = date('Y-m-d H:i:s', $coupon['ended_at']);
             $limitUse = $coupon['limit_use'] ?? '不限制';
             $createTime = date('Y-m-d H:i:s', $coupon['created_at']);
-            $limitPlanIds = isset($coupon['limit_plan_ids']) ? implode("/", $coupon['limit_plan_ids']) : '不限制';
+            $limitPlanIds = isset($coupon['limit_plan_ids']) ? implode('/', $coupon['limit_plan_ids']) : '不限制';
             $data .= "{$coupon['name']},{$type},{$value},{$startTime},{$endTime},{$limitUse},{$limitPlanIds},{$coupon['code']},{$createTime}\r\n";
         }
         echo $data;
     }
 
-    public function drop(Request $request)
+    public function drop(CouponDrop $request)
     {
-        $request->validate([
-            'id' => 'required|numeric'
-        ], [
-            'id.required' => '优惠券ID不能为空',
-            'id.numeric' => '优惠券ID必须为数字'
-        ]);
-        $coupon = Coupon::find($request->input('id'));
+        $coupon = Coupon::find($request->integer('id'));
         if (!$coupon) {
             return $this->fail([400202, '优惠券不存在']);
         }

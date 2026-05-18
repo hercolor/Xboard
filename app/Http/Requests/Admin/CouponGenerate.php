@@ -7,15 +7,22 @@ use Illuminate\Foundation\Http\FormRequest;
 class CouponGenerate extends FormRequest
 {
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
+     * Determine if the user is authorized to make this request.
      */
-    public function rules()
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     */
+    public function rules(): array
     {
         return [
+            'id' => 'nullable|integer',
             'generate_count' => 'nullable|integer|max:500',
-            'name' => 'required',
+            'name' => 'required|string',
             'type' => 'required|in:1,2',
             'value' => 'required|integer',
             'started_at' => 'required|integer',
@@ -24,13 +31,17 @@ class CouponGenerate extends FormRequest
             'limit_use_with_user' => 'nullable|integer',
             'limit_plan_ids' => 'nullable|array',
             'limit_period' => 'nullable|array',
-            'code' => ''
+            'code' => 'nullable|string',
         ];
     }
 
-    public function messages()
+    /**
+     * Get custom validation messages.
+     */
+    public function messages(): array
     {
         return [
+            'id.integer' => '优惠券ID格式有误',
             'generate_count.integer' => '生成数量必须为数字',
             'generate_count.max' => '生成数量最大为500个',
             'name.required' => '名称不能为空',
@@ -45,7 +56,7 @@ class CouponGenerate extends FormRequest
             'limit_use.integer' => '最大使用次数格式有误',
             'limit_use_with_user.integer' => '限制用户使用次数格式有误',
             'limit_plan_ids.array' => '指定订阅格式有误',
-            'limit_period.array' => '指定周期格式有误'
+            'limit_period.array' => '指定周期格式有误',
         ];
     }
 }
