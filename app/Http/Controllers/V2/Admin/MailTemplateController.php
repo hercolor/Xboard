@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\V2\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\MailTemplateGet;
+use App\Http\Requests\Admin\MailTemplateReset;
+use App\Http\Requests\Admin\MailTemplateSave;
+use App\Http\Requests\Admin\MailTemplateTest;
 use App\Models\MailTemplate;
 use App\Services\MailService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -30,9 +33,9 @@ class MailTemplateController extends Controller
         return $this->success($result);
     }
 
-    public function get(Request $request)
+    public function get(MailTemplateGet $request)
     {
-        $name = $request->input('name');
+        $name = $request->validated()['name'];
         $meta = MailTemplate::getMeta($name);
         if (!$meta) {
             return $this->fail([404, '模板不存在']);
@@ -51,13 +54,9 @@ class MailTemplateController extends Controller
         ]);
     }
 
-    public function save(Request $request)
+    public function save(MailTemplateSave $request)
     {
-        $params = $request->validate([
-            'name' => 'required|string',
-            'subject' => 'required|string|max:255',
-            'content' => 'required|string',
-        ]);
+        $params = $request->validated();
 
         $meta = MailTemplate::getMeta($params['name']);
         if (!$meta) {
@@ -78,9 +77,9 @@ class MailTemplateController extends Controller
         return $this->success(true);
     }
 
-    public function reset(Request $request)
+    public function reset(MailTemplateReset $request)
     {
-        $name = $request->input('name');
+        $name = $request->validated()['name'];
         $meta = MailTemplate::getMeta($name);
         if (!$meta) {
             return $this->fail([404, '模板不存在']);
@@ -91,15 +90,16 @@ class MailTemplateController extends Controller
         return $this->success(true);
     }
 
-    public function test(Request $request)
+    public function test(MailTemplateTest $request)
     {
-        $name = $request->input('name');
+        $params = $request->validated();
+        $name = $params['name'];
         $meta = MailTemplate::getMeta($name);
         if (!$meta) {
             return $this->fail([404, '模板不存在']);
         }
 
-        $email = $request->input('email', $request->user()->email);
+        $email = $params['email'] ?? $request->user()->email;
         $testVars = $this->getTestVars($name);
 
         try {
