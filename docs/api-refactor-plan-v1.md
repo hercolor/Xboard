@@ -41,6 +41,32 @@
 4. `V2 coupon`
 5. `V2 mail/template`
 
+### 2.1.1 当前执行状态（2026-05-18）
+
+首批白名单模块第一轮代码整理已全部完成：
+
+- [x] `V2 plan`
+- [x] `V2 notice`
+- [x] `V2 knowledge`
+- [x] `V2 coupon`
+- [x] `V2 mail/template`
+
+本轮完成内容以“非破坏性收敛”为边界，主要包括：
+
+1. 补齐或新增 `FormRequest`
+2. 收敛 Controller 内联校验
+3. 修复空对象 `find()->update()` / `find()->toArray()` 一类低风险缺陷
+4. 保持原路由、原响应 envelope、原业务路径不变
+5. 不触碰订阅、节点、前台用户主链路
+
+对应代码提交：
+
+- `4739a6e` `V2 plan`
+- `1d3d287` `V2 notice`
+- `62d58dd` `V2 knowledge`
+- `72d23ba` `V2 coupon`
+- `81d79fd` `V2 mail/template`
+
 ### 2.2 本轮明确不处理
 
 以下模块 **不进入 v1 实施**：
@@ -257,6 +283,42 @@ v1 完成后，首批模块应达到：
 - `SortRequest`
 - `ToggleRequest`
 - `DeleteRequest`
+
+---
+
+## 6. 本轮完成后的残留问题
+
+第一轮整理完成后，仍保留以下后续任务：
+
+### 6.1 路由-控制器一致性复核
+
+已发现至少一处需要后续单独处理的存量问题：
+
+- `V2 notice` 路由中存在 `POST /notice/update`
+- 但 `NoticeController` 中没有对应 `update()` 方法
+
+该问题属于历史结构问题，不属于本轮“低风险校验收敛”直接修复范围。
+
+### 6.2 缺少自动化验证基线
+
+当前仓库本地未安装 `vendor/`，且测试基线较薄，导致本轮只能完成：
+
+- `php -l` 语法验证
+
+尚未完成：
+
+- Feature test
+- 接口回归测试
+- 管理端联调验证
+
+### 6.3 第二阶段建议
+
+第二阶段不建议立即进入高风险用户链路，建议优先做：
+
+1. 路由-控制器映射审计
+2. Admin API 响应码/错误语义一致性审计
+3. `config / order / payment / theme / system` 是否进入下一批白名单评估
+4. 为已完成的 5 个模块补最小回归测试基线
 
 #### 读操作
 
@@ -607,4 +669,3 @@ v1 结束后，立刻做一次复盘，判断是否进入：
 5. 最后做 `V2 MailTemplateController`
 
 这是当前最稳的 API 整理起点。
-
