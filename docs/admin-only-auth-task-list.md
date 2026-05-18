@@ -55,13 +55,17 @@
 - `/api/v2/passport/auth/login`
 - `/api/v2/user/info`
 
+### 说明
+
+- 当前仓库没有后台前端源码，本阶段通过 `public/assets/admin` dist 子模块做最小认证补丁完成切换。
+
 ### 任务
 
-- [ ] 将后台登录请求切换为 `/{secure_path}/auth/login`
-- [ ] 将后台初始化用户请求切换为 `/{secure_path}/auth/me`
-- [ ] 将后台退出登录切换为 `/{secure_path}/auth/logout`
-- [ ] 清理前端对白名单共享认证路径的依赖
-- [ ] 回归后台登录/刷新/退出流程
+- [x] 将后台登录请求切换为 `/{secure_path}/auth/login`
+- [x] 将后台初始化用户请求切换为 `/{secure_path}/auth/me`
+- [x] 将后台退出登录切换为 `/{secure_path}/auth/logout`
+- [x] 清理前端对白名单共享认证路径的依赖（登录入口已放行 `secure_path/auth/login`，共享辅助白名单保留兼容）
+- [ ] 回归后台登录/刷新/退出流程（待完整浏览器运行环境）
 
 ---
 
