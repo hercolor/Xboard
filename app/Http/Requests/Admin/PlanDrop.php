@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PlanUpdate extends FormRequest
+class PlanDrop extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -16,27 +16,22 @@ class PlanUpdate extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'id' => 'required|integer',
-            'show' => 'in:0,1',
-            'renew' => 'in:0,1',
-            'sell' => 'in:0,1',
         ];
     }
 
-    public function messages()
+    /**
+     * Get custom validation messages.
+     */
+    public function messages(): array
     {
         return [
             'id.required' => '订阅ID不能为空',
             'id.integer' => '订阅ID格式不正确',
-            'show.in' => '销售状态格式不正确',
-            'renew.in' => '续费状态格式不正确',
-            'sell.in' => '可购买状态格式不正确',
         ];
     }
 }

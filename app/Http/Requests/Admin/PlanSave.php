@@ -5,7 +5,6 @@ namespace App\Http\Requests\Admin;
 use App\Models\Plan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class PlanSave extends FormRequest
 {
@@ -31,10 +30,14 @@ class PlanSave extends FormRequest
             'prices' => 'nullable|array',
             'prices.*' => 'nullable|numeric|min:0',
             'group_id' => 'integer|nullable',
+            'show' => 'nullable|in:0,1',
+            'renew' => 'nullable|in:0,1',
+            'sell' => 'nullable|in:0,1',
             'speed_limit' => 'integer|nullable|min:0',
             'device_limit' => 'integer|nullable|min:0',
             'capacity_limit' => 'integer|nullable|min:0',
             'tags' => 'array|nullable',
+            'force_update' => 'nullable|boolean',
         ];
     }
 
@@ -131,6 +134,9 @@ class PlanSave extends FormRequest
             'prices.*.numeric' => '价格必须是数字',
             'prices.*.min' => '价格不能为负数',
             'group_id.integer' => '权限组ID必须是整数',
+            'show.in' => '显示状态格式不正确',
+            'renew.in' => '续费状态格式不正确',
+            'sell.in' => '销售状态格式不正确',
             'speed_limit.integer' => '速度限制必须是整数',
             'speed_limit.min' => '速度限制不能为负数',
             'device_limit.integer' => '设备限制必须是整数',
@@ -138,20 +144,7 @@ class PlanSave extends FormRequest
             'capacity_limit.integer' => '容量限制必须是整数',
             'capacity_limit.min' => '容量限制不能为负数',
             'tags.array' => '标签格式必须是数组',
+            'force_update.boolean' => '强制同步参数格式不正确',
         ];
-    }
-
-    /**
-     * Handle a failed validation attempt.
-     */
-    protected function failedValidation(Validator $validator): void
-    {
-        throw new HttpResponseException(
-            response()->json([
-                'data' => false,
-                'message' => $validator->errors()->first(),
-                'errors' => $validator->errors()->toArray()
-            ], 422)
-        );
     }
 }
