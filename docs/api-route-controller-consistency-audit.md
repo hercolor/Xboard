@@ -49,20 +49,21 @@
 
 ### 2.1 状态更新（2026-05-18，同轮修复后）
 
-在本次审计完成后，已立即补齐 3 个后台兼容入口：
+在本次审计完成后，已立即补齐 4 个兼容入口：
 
+- `V1 User /knowledge/getCategory`
 - `V2 Admin /notice/update`
 - `V2 Admin /user/setInviteUser`
 - `V2 Admin /stat/getRanking`
 
-当前重新静态复扫后，**剩余未修复的硬不一致点只剩 1 处**：
+当前重新静态复扫后：
 
-- `V1 User /knowledge/getCategory`
+> **已确认的 4 处硬不一致点均已补齐兼容实现。**
 
-因此，这份文档中第 3 节的 4 个问题应理解为：
+因此，这份文档中第 3 节的 4 个问题现在应理解为：
 
-- **3 个已修复（后台）**
-- **1 个待决策（前台用户口）**
+- **4 个都已修复**
+- 后续只剩“是否保留兼容路由 / 是否继续删除历史别名”的治理问题
 
 ---
 
@@ -103,7 +104,7 @@ $router->get('/knowledge/getCategory', [KnowledgeController::class, 'getCategory
 原因：
 - 属于用户前台路由
 - 但从仓内文本检索看，当前代码里没有直接引用该路径，疑似死路由
-- **当前状态：待处理**
+- **当前状态：已于本轮补兼容方法**
 
 ---
 
@@ -349,9 +350,9 @@ use App\Http\Controllers\V1\Server\TrojanTidalabController;
 
 建议修复顺序：
 
-1. `V1 user/knowledge/getCategory`
-2. `V2 -> V1` 复用拆分评估
-3. 后台兼容路由是否进入下一轮清理（删除旧入口或保留别名）
+1. `V2 -> V1` 复用拆分评估
+2. 后台兼容路由是否进入下一轮清理（删除旧入口或保留别名）
+3. 用户知识库历史别名接口是否继续保留
 
 原因：
 - 后台问题更容易验证
