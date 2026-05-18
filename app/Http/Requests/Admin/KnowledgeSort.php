@@ -7,22 +7,45 @@ use Illuminate\Foundation\Http\FormRequest;
 class KnowledgeSort extends FormRequest
 {
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
+     * Determine if the user is authorized to make this request.
      */
-    public function rules()
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Normalize legacy payload shape.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (!$this->has('ids') && $this->has('knowledge_ids')) {
+            $this->merge([
+                'ids' => $this->input('knowledge_ids'),
+            ]);
+        }
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     */
+    public function rules(): array
     {
         return [
-            'knowledge_ids' => 'required|array'
+            'ids' => 'required|array',
+            'ids.*' => 'integer',
         ];
     }
 
-    public function messages()
+    /**
+     * Get custom validation messages.
+     */
+    public function messages(): array
     {
         return [
-            'knowledge_ids.required' => '知识ID不能为空',
-            'knowledge_ids.array' => '知识ID格式有误'
+            'ids.required' => '知识ID不能为空',
+            'ids.array' => '知识ID格式有误',
+            'ids.*.integer' => '知识ID必须是整数',
         ];
     }
 }

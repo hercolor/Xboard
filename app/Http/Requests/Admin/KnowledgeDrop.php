@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class KnowledgeSave extends FormRequest
+class KnowledgeDrop extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -20,12 +20,7 @@ class KnowledgeSave extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'nullable|integer',
-            'category' => 'required|string',
-            'language' => 'required|string',
-            'title' => 'required|string',
-            'body' => 'required|string',
-            'show' => 'nullable|boolean',
+            'id' => 'required|integer',
         ];
     }
 
@@ -35,12 +30,8 @@ class KnowledgeSave extends FormRequest
     public function messages(): array
     {
         return [
+            'id.required' => '知识库ID不能为空',
             'id.integer' => '知识库ID格式不正确',
-            'title.required' => '标题不能为空',
-            'category.required' => '分类不能为空',
-            'body.required' => '内容不能为空',
-            'language.required' => '语言不能为空',
-            'show.boolean' => '显示状态必须为布尔值',
         ];
     }
 }
