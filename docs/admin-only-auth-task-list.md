@@ -1,7 +1,7 @@
 # Xboard 仅后台模式任务清单（DK_Theme API 保留）
 
 > 更新时间：2026-05-19
-> 当前阶段：Phase 4 已完成 DK_Theme 兼容矩阵冻结与路由契约测试；下一阶段进入完整运行环境回归与自定义镜像发布准备。
+> 当前阶段：Phase 5 已完成测试环境修复、完整 PHPUnit、本地运行 smoke 与自有镜像发布准备；剩余浏览器级后台登录、真实订阅 token、DK_Theme 联调和回调类 smoke。
 
 ---
 
@@ -143,21 +143,33 @@
 
 ### 任务
 
-- [ ] 修复本地测试环境缺失 sqlite PDO driver 的问题，或明确改用可用测试数据库。
-- [ ] 跑完整 PHPUnit，确认新增路由契约测试与既有 ServerHandshake 测试都通过。
-- [ ] 启动 Xboard 完整运行环境。
-- [ ] 回归 `/` → `/{secure_path}` 后台入口。
+- [x] 修复本地测试环境缺失 sqlite PDO driver 的问题，或明确改用可用测试数据库。
+- [x] 跑完整 PHPUnit，确认新增路由契约测试与既有 ServerHandshake 测试都通过。
+- [x] 启动 Xboard 完整运行环境。
+- [x] 回归 `/` → `/{secure_path}` 后台入口。
 - [ ] 回归后台登录、刷新 `auth/me`、退出登录。
 - [ ] 回归 `/s/{token}` 订阅链路。
 - [ ] 回归 DK_Theme 登录、注册、找回密码、邮箱验证码、`user/info`。
-- [ ] 回归 V1 Guest config/plan/payment notify/telegram webhook 的 smoke 级可达性。
-- [ ] 梳理自有镜像命名与 tag 策略，默认候选：`ghcr.io/hercolor/xboard:latest`。
-- [ ] 增加或更新构建/发布文档，说明 compose 中如何从官方镜像切换到自有镜像。
-- [ ] 如需自动发布，新增 GitHub Actions 构建 GHCR 镜像的方案或工作流。
+- [ ] 回归 V1 Guest payment notify/telegram webhook 的 smoke 级可达性。
+- [x] 回归 V1 Guest config/plan 的 smoke 级可达性。
+- [x] 梳理自有镜像命名与 tag 策略，默认候选：`ghcr.io/hercolor/xboard:latest`。
+- [x] 增加或更新构建/发布文档，说明 compose 中如何从官方镜像切换到自有镜像。
+- [x] 如需自动发布，新增 GitHub Actions 构建 GHCR 镜像的方案或工作流。
+
+
+### 已完成验证记录
+
+- 测试环境：`.local/bin/php-xboard` 已加载 `pdo_mysql,pdo_sqlite,sqlite3`。
+- 完整 PHPUnit：`.local/bin/php-xboard ./vendor/bin/phpunit --bootstrap vendor/autoload.php tests` → `9 tests, 41 assertions`。
+- 本地运行环境：`./scripts/dev-up.sh` 通过，输出 `/ -> 302`、`/{secure_path} -> 200`、guest config API `200`。
+- `./scripts/dev-status.sh` 确认 Redis OK、SQLite DB、后台入口 `200`、API `200`。
+- 额外 smoke：`/api/v1/guest/comm/config` → `200`，`/api/v1/guest/plan/fetch` → `200`，空 payload 访问 `passport/auth/login` 返回 `422`，未登录访问 `user/info` 返回 `403`，证明路由可达且仍保留校验/鉴权边界。
+- 自有镜像文档：`docs/custom-image-deployment.md`。
+- GHCR workflow：`.github/workflows/docker-publish.yml` 统一小写镜像名，并在 metadata 前生成 version。
 
 ---
 
 ## 风险提示
 
-- 当前环境已有 `vendor/`，但本地 PHP 缺少 sqlite PDO driver，完整 PHPUnit 仍被既有 ServerHandshake 测试阻断。
+- 当前环境已有 `vendor/`；通过 `.local/bin/php-xboard` 加载本地 DB 扩展后，完整 PHPUnit 已通过。
 - 旧共享认证链路当前必须保留，否则会打断 DK_Theme 登录、注册、找回密码、邮箱验证码与 `user/info`。

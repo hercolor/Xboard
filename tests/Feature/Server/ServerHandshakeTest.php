@@ -4,6 +4,7 @@ namespace Tests\Feature\Server;
 
 use App\Models\Server;
 use App\Models\ServerMachine;
+use App\Support\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -22,6 +23,8 @@ class ServerHandshakeTest extends TestCase
             'server_token' => 'server-token',
             'server_ws_enable' => 0,
         ]);
+
+        app()->forgetInstance(Setting::class);
     }
 
     public function test_v2_handshake_accepts_token_only_without_node(): void
