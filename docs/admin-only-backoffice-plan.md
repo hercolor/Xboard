@@ -1,16 +1,17 @@
 # Xboard 仅后台模式（Admin-Only）改造方案
 
-> 时间：2026-05-18  
-> 角色：架构师  
-> 目标：将 Xboard 从“会员前台 + 管理后台”收敛为“仅后台管理系统”，保持现有前后端分离方式不变，前端继续通过 API 访问后端。
+> 时间：2026-05-18
+> 角色：架构师
+> 目标：将 Xboard 后端内置 Web 前台壳层收敛为“仅后台管理入口”，保持现有前后端分离方式不变，DK_Theme 等分离前端继续通过 API 访问后端。
+> 2026-05-19 范围修正：本方案只处理 **Xboard 内置前台壳层**，不取消 DK_Theme 的会员登录/注册/找回密码能力。
 
 ---
 
 ## 1. 需求结论
 
-新目标不是“关闭注册”这么简单，而是：
+新目标不是“关闭注册”或“删除会员 API”，而是：
 
-> **取消会员登录与会员前台入口，仅保留后台管理访问。**
+> **取消 Xboard 后端项目内置会员 Web 前台壳层，仅保留后台 Web 入口；继续保留 DK_Theme 分离前端所需的会员登录、注册、找回密码与用户 API。**
 
 同时保留：
 
@@ -22,8 +23,8 @@
 
 所以这是一次 **产品形态切换**：
 
-- 从“用户面板 + 后台面板”
-- 切到“后台运营面板 + 订阅/节点基础设施”
+- 从“后端内置用户面板 + 后台面板”
+- 切到“后台运营面板 + 分离前端 API + 订阅/节点基础设施”
 
 ---
 
@@ -228,24 +229,26 @@ Infrastructure APIs
    - 支付回调
    - Telegram webhook
 
-### 退役层
+### 收口层（仅 Xboard 内置 Web 壳层）
 
-1. 用户前台主题入口
+1. Xboard 内置用户前台主题入口
    - `/`
    - `theme/Xboard/*`
 
-2. 会员自助认证入口
+2. Xboard 内置主题中的会员自助页面/按钮
    - 注册
    - 普通用户登录
    - 找回密码
    - 邮件登录
    - 邮箱验证码发送
+   - 说明：这里只处理内置 Web 壳层入口，不禁用 DK_Theme 调用的 `Passport/User` API。
 
-3. 用户前台业务 API
+3. Xboard 内置主题中的用户业务页面入口
    - 用户中心
    - 订单中心
    - 工单中心
    - 前台公告/知识库/邀请/钱包等前台自助能力
+   - 说明：这里只退出后端内置主题渲染路径，不删除对应 API 契约。
 
 ---
 
@@ -281,12 +284,12 @@ Infrastructure APIs
 
 | 路由组 | 当前用途 | Admin-Only 目标 | 建议 |
 | --- | --- | --- | --- |
-| `V1 GuestRoute` | 前台公开配置/套餐/回调 | 仅保留 webhook/notify 必要项 | 选择性保留 |
-| `V1 PassportRoute` | 前台注册/登录/找回 | 退役 | 禁用 |
-| `V1 UserRoute` | 前台用户中心 | 退役 | 禁用 |
+| `V1 GuestRoute` | 前台公开配置/套餐/回调 | 保留给 DK_Theme 与必要 webhook/notify | 保留，后续逐项审计 |
+| `V1 PassportRoute` | 前台注册/登录/找回 | 保留给 DK_Theme | 不禁用，不删除 |
+| `V1 UserRoute` | 前台用户中心 | 保留给 DK_Theme | 不禁用，不删除 |
 | `V1 ClientRoute` | token 订阅/客户端配置 | 按业务保留 | 保留订阅主链路 |
-| `V2 PassportRoute` | 兼容登录链路 | 退役或仅保留管理员登录过渡 | 优先拆掉共享认证 |
-| `V2 UserRoute` | 兼容用户信息接口 | 退役 | 禁用 |
+| `V2 PassportRoute` | 兼容登录链路 | 保留兼容，后续只做解耦/审计 | 不禁用，不删除 |
+| `V2 UserRoute` | 兼容用户信息接口 | 保留兼容，后续只做解耦/审计 | 不禁用，不删除 |
 | `V2 ClientRoute` | 客户端 token 配置 | 视客户端依赖决定 | 先保留后审计 |
 | `V2 AdminRoute` | 后台管理 API | 保留 | 主业务 API |
 | `V1/V2 ServerRoute` | 节点通信 | 保留 | 基础设施 API |
@@ -297,7 +300,7 @@ Infrastructure APIs
 
 ## 5.1 不能直接删除 `users` 体系
 
-虽然要取消“会员登录”，但不能直接理解成“不再需要用户”。
+虽然要取消后端内置会员 Web 壳层，但不能理解成“不再需要会员登录 API”或“不再需要用户”。
 
 当前 `User` 仍然承载：
 
@@ -310,9 +313,9 @@ Infrastructure APIs
 
 所以正确理解是：
 
-> **取消的是“会员交互入口”，不是“用户数据模型”。**
+> **取消的是 Xboard 后端内置会员 Web 壳层，不是 DK_Theme 的会员交互能力，也不是用户数据模型。**
 
-`users` 仍然保留，只是不再提供自助登录门户。
+`users`、共享 Passport/User API 仍然保留，供 DK_Theme 分离前端、订阅和业务 API 使用。
 
 ---
 
@@ -346,7 +349,7 @@ Infrastructure APIs
 
 这一步完成后，才能真正让：
 
-- 用户登录体系退役
+- 后台不再依赖共享会员登录入口
 - 后台登录体系独立
 
 ---
@@ -367,7 +370,7 @@ Infrastructure APIs
 
 因此：
 
-> 即使取消会员登录，也不等于要立刻删除订阅通道。
+> 即使取消 Xboard 内置会员 Web 壳层，也不等于要删除 DK_Theme 会员 API 或订阅通道。
 
 除非产品目标进一步变成：
 
@@ -392,8 +395,8 @@ Infrastructure APIs
 用途：
 
 - Web 路由判断
-- Auth 入口判断
-- Guest/Passport/User 路由判断
+- 后台配置 UI 展示判断
+- 内置前台主题壳层渲染判断
 - Admin UI 配置页展示判断
 
 ---
@@ -438,25 +441,27 @@ Infrastructure APIs
 
 ---
 
-## Phase 3：禁用会员认证与前台用户 API
+## Phase 3：收口后端内置会员 Web 壳层
 
-目标：彻底切断普通会员交互入口。
+目标：后端项目不再渲染内置会员前台壳层，但继续为 DK_Theme 等分离前端提供会员 API。
 
 实施项：
 
-1. 禁用 `V1 PassportRoute`
-2. 禁用 `V2 PassportRoute`
-3. 禁用 `V1 UserRoute`
-4. 禁用 `V2 UserRoute`
-5. `V1 GuestRoute` 仅保留必要 webhook/notify
+1. `/` 不再渲染 `theme::*.dashboard` 会员壳层
+2. `/` 采用重定向到后台入口或 404 的低风险策略
+3. 保留 `V1 PassportRoute`
+4. 保留 `V2 PassportRoute`
+5. 保留 `V1 UserRoute`
+6. 保留 `V2 UserRoute`
+7. 保留 `V1 GuestRoute` 给 DK_Theme、webhook/notify 等通道
 
-对于“禁用”的实现建议：
+对于“收口”的实现建议：
 
 ### 短期做法（兼容优先）
 
-- 路由保留
-- 但统一返回 403 / 410
-- 响应消息明确说明：系统已切换为仅后台模式
+- API 路由保留
+- 只停止后端内置会员 Web 壳层渲染
+- 分离前端继续通过 `/api/v1/passport/*`、`/api/v1/user/*` 等接口工作
 
 优点：
 
@@ -465,7 +470,8 @@ Infrastructure APIs
 
 ### 中期做法（收口）
 
-- 清理已无引用的旧路由
+- 只清理已无引用的内置主题页面、静态资源和配置入口
+- 共享 `Passport/User/Guest` API 需继续保留给 DK_Theme，后续只能按单独 PRD 做兼容审计
 
 ---
 
@@ -514,10 +520,11 @@ Infrastructure APIs
 
 ## 7.2 第二风险：订阅与客户端能力容易被误删
 
-如果把“取消会员登录”误做成“删除所有用户相关 API”，会直接影响：
+如果把“只处理 Xboard 内置前台壳层”误做成“取消 DK_Theme 会员登录”或“删除所有用户相关 API”，会直接影响：
 
 - `/s/{token}`
 - `/api/v1/client/subscribe`
+- DK_Theme 登录 / 注册 / 找回密码 / `user/info`
 - 节点使用
 - 客户端导入
 
@@ -525,6 +532,7 @@ Infrastructure APIs
 
 - **登录前台 ≠ 订阅分发**
 - **用户门户 ≠ 用户数据模型**
+- **Xboard 内置前台壳层 ≠ DK_Theme 分离前端**
 
 ---
 
@@ -536,7 +544,7 @@ Infrastructure APIs
 - telegram webhook
 - 邮件模板中的登录链接
 
-因此禁用会员前台时，必须同时审计：
+因此收口 Xboard 内置会员前台壳层时，必须同时审计：
 
 - 是否还需要邮件登录链接
 - 是否还需要忘记密码模板
@@ -573,13 +581,14 @@ Infrastructure APIs
 - [ ] 新增后台 `me/check`
 - [ ] 限制 `is_admin = 1`
 
-### T5：禁用会员侧 Auth / User API
+### T5：冻结 DK_Theme 依赖的 Auth / User API
 
-- [ ] 禁用 `V1 PassportRoute`
-- [ ] 禁用 `V2 PassportRoute`
-- [ ] 禁用 `V1 UserRoute`
-- [ ] 禁用 `V2 UserRoute`
-- [ ] GuestRoute 只保留必要对外回调
+- [ ] 保留 `V1 PassportRoute`
+- [ ] 保留 `V2 PassportRoute`
+- [ ] 保留 `V1 UserRoute`
+- [ ] 保留 `V2 UserRoute`
+- [ ] GuestRoute 保留 DK_Theme 与必要对外回调依赖
+- [ ] 只移除/隐藏 Xboard 内置壳层中的会员入口，不改 API 契约
 
 ### T6：清理后台配置语义
 
@@ -595,17 +604,17 @@ Infrastructure APIs
 
 1. **入口层**：关掉用户前台 `/`
 2. **认证层**：把后台登录从共享 Passport 中拆出来
-3. **业务层**：禁用会员自助 API，但保留订阅/节点/回调基础设施
+3. **业务层**：保留 DK_Theme 会员 API、订阅/节点/回调基础设施，只收口后端内置会员 Web 壳层
 
 一句话总结：
 
-> **Xboard 要改成“仅后台模式”，本质上不是 UI 删除，而是“共享用户认证体系”向“后台专属认证体系”的收口。**
+> **Xboard 要改成“仅后台模式”，本轮本质上是后端内置前台壳层退出主路径，同时后台认证独立；不是删除 DK_Theme 所需的会员 API。**
 
 只有先完成这个收口，后面无论是：
 
 - 接口加密
 - API 分层
 - 后台前后端完全分离
-- 会员前台彻底下线
+- Xboard 内置会员前台彻底下线
 
 才会是稳定、可维护的改造路径。

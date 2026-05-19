@@ -1,7 +1,7 @@
-# Xboard 仅后台模式任务清单（认证拆分优先）
+# Xboard 仅后台模式任务清单（DK_Theme API 保留）
 
 > 更新时间：2026-05-19
-> 当前阶段：Phase 3 已完成后台认证切换与 Web 前台入口收口；下一阶段进入共享前台认证链路退役审计。
+> 当前阶段：Phase 3 已完成后台认证切换与 Web 前台入口收口；下一阶段只冻结 DK_Theme 依赖矩阵与内置壳层后续清理项，不删除共享会员 API。
 
 ---
 
@@ -88,23 +88,24 @@
 
 ---
 
-## Phase 4 — 共享前台认证链路退役
+## Phase 4 — DK_Theme 兼容矩阵冻结
 
 ### 目标
 
-在后台完全切换后，再考虑下线不再需要的前台认证入口。
+确认并冻结 DK_Theme 对共享 `Passport/User/Guest` API 的依赖，防止后续把“关闭 Xboard 内置前台壳层”误做成“禁用会员 API”。
 
 ### 执行边界
 
 - 本阶段只做审计、矩阵冻结和后续实施队列。
 - 不删除接口，不做 AES 返回加密，不修改订阅、节点、支付回调、Webhook、插件 Hook 通道。
+- DK_Theme 的登录、注册、找回密码、邮箱验证码、`user/info` 必须保持可用。
 - 分离前端依赖为 `unknown` 时，视为删除/软封禁阻断条件。
 - `user/info` 当前不再是后台初始化 blocker；它是剩余消费者验证项。
 
 ### 任务
 
 - [ ] 刷新 `docs/api-interface-matrix.md` 中认证、通道、V1/V2 复用相关增量事实
-- [ ] 建立 `docs/api-auth-retirement-matrix.md` 作为共享认证退役决策矩阵
+- [ ] 建立 `docs/api-auth-retirement-matrix.md` 作为共享认证保留/兼容决策矩阵
 - [ ] 审核 `passport/auth/token2Login`
 - [ ] 审核 `passport/auth/register`
 - [ ] 审核 `passport/auth/forget`

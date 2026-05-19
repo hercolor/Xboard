@@ -1,18 +1,18 @@
-# Xboard 共享认证退役矩阵（Phase 4A/4B）
+# Xboard 共享认证保留/兼容矩阵（Phase 4A/4B）
 
-> 更新时间：2026-05-19  
-> 范围：仅后台模式后，审计共享前台认证链路是否可退役。  
+> 更新时间：2026-05-19
+> 范围：仅后台模式后，冻结 DK_Theme 与共享前台认证链路的兼容边界。
 > 结论：本阶段只冻结矩阵和后续实施队列；**不删除接口、不软封禁未知依赖、不做 AES 返回加密**。
 
 ---
 
 ## 1. 执行边界
 
-本矩阵用于回答：哪些共享前台认证接口仍是前台 API 契约、哪些只是后台编译产物残留、哪些可以进入后续软封禁/迁移/删除 PRD。
+本矩阵用于回答：哪些共享前台认证接口仍是 DK_Theme / 前台 API 契约、哪些只是后台编译产物残留、哪些只能在后续单独 PRD 中评估迁移。当前默认策略是保留 DK_Theme 所需接口。
 
 硬规则：
 
-1. `external frontend dependency = unknown` 时，退役决策只能是 `keep` / `no-touch` / `needs external confirmation`。
+1. `external frontend dependency = unknown` 时，处置决策只能是 `keep` / `no-touch` / `needs external confirmation`。
 2. 订阅 `/s/{token}`、节点 API、支付回调、Webhook、插件 Hook、后台导出流不纳入普通 JSON 统一响应或 AES 加密。
 3. V2 `passport/user` 仍复用 V1 controller；任何 V1/V2 单边修改都可能双版本共振。
 4. admin dist 字符串命中不等于 live dependency，必须和运行路径证据分开记录。
@@ -41,9 +41,9 @@
 
 ---
 
-## 3. 必审 endpoint 退役矩阵
+## 3. 必审 endpoint 保留/兼容矩阵
 
-| Endpoint | Method | Channel | Auth | Response type | V1/V2 reuse | Current admin dependency | Admin unauth allowlist | Compiled allowlist residue | External frontend dependency | Other dependency | Runtime/E2E gap | Retirement decision | Verification |
+| Endpoint | Method | Channel | Auth | Response type | V1/V2 reuse | Current admin dependency | Admin unauth allowlist | Compiled allowlist residue | External frontend dependency | Other dependency | Runtime/E2E gap | Disposition decision | Verification |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `/api/v1/passport/auth/token2Login`<br>`/api/v2/passport/auth/token2Login` | GET | Frontend API / mail-link login | guest | `redirect` when `token`; raw JSON when `verify` / error | V1 + V2 both use `V1\Passport\AuthController::token2Login` | No current admin flow evidence after Phase 2; prior audit recorded old admin risk | Residual/unknown: string appears near admin unauth compatibility list in dist; not runtime-confirmed | Yes: `public/assets/admin/assets/index-BdbgNvrf.js` contains `token2Login` | documented in `docs/user-frontend-api-draft.md`; not found in DK_Theme source scan | mail-link / quick-login clients possible | Browser/admin and separated frontend mail-link E2E deferred; DK_Theme does not currently prove usage | `keep` + `needs external confirmation`; no soft-disable | routes: `app/Http/Routes/V1/PassportRoute.php`, `app/Http/Routes/V2/PassportRoute.php`; controller: `AuthController::token2Login`; docs: frontend draft + reuse audit; DK_Theme scan: no source hit |
 | `/api/v1/passport/auth/register`<br>`/api/v2/passport/auth/register` | POST | Frontend API / account creation | guest | `success(auth_data)` / `fail` | V1 + V2 both use `V1\Passport\AuthController::register` | No current admin dependency | Residual/unknown: dist string exists; not runtime-confirmed admin dependency | Yes: admin dist contains `auth/register` | runtime source-confirmed in DK_Theme `src/lib/api/services/auth.ts`; documented in frontend draft | DK_Theme registration page posts email/email_code/password/invite_code and stores `auth_data` | Browser registration E2E deferred, but source dependency is confirmed | `keep`; not a soft-disable/delete candidate while DK_Theme registration remains enabled | routes: V1/V2 PassportRoute; request: `AuthRegister`; controller: `register`; DK_Theme `auth.ts:68-89`, `register-page.tsx:84-90`; docs: frontend draft |
@@ -53,7 +53,7 @@
 
 ---
 
-## 4. Watchlist（相邻观察面，不进入本轮退役）
+## 4. Watchlist（相邻观察面，不进入本轮改动）
 
 | Endpoint | Method | Why watch | Evidence | Decision |
 |---|---|---|---|---|
@@ -77,9 +77,9 @@
 | Priority | Task | Preconditions | Allowed changes |
 |---|---|---|---|
 | P0 | 保持本矩阵与 `docs/api-interface-matrix.md` 同步 | 本文档已落地 | 文档、测试、smoke；不改接口 |
-| P1 | 规划“取消会员登录”的配置化策略 | 分离前端依赖确认；产品确认仍需 API 登录还是只隐藏 Web 登录 | PRD/test-spec；可设计配置开关，但不直接删除 |
-| P2 | 共享 Passport/User V1/V2 解耦 | retirement matrix 确认哪些 endpoint 仍保留 | 新兼容层、独立 V2 shell、deprecation note |
-| P3 | 软封禁或物理删除候选 | 无 admin、分离前端、机器脚本、插件依赖；有回滚方案 | 单独 PRD + 测试 + 版本迁移说明 |
+| P1 | 规划“只隐藏 Xboard 内置会员 Web 壳层”的配置化策略 | 分离前端依赖确认；产品确认 DK_Theme 仍保留 API 登录 | PRD/test-spec；可设计配置开关，但不直接删除 |
+| P2 | 共享 Passport/User V1/V2 解耦 | 兼容矩阵确认哪些 endpoint 仍保留 | 新兼容层、独立 V2 shell、deprecation note |
+| P3 | 未来软封禁或物理删除候选 | 仅限确认无 admin、DK_Theme、机器脚本、插件依赖且有回滚方案的接口 | 单独 PRD + 测试 + 版本迁移说明 |
 | P4 | 响应 AES / 统一 envelope | response channel matrix 完成；明确排除订阅、节点、回调、导出流 | 仅对明确业务 JSON 通道做 opt-in |
 
 ---

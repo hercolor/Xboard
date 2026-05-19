@@ -509,9 +509,9 @@ GET /api/v2/{secure_path}/auth/me
 
 ---
 
-## 9.3 第三阶段：退役共享用户认证入口
+## 9.3 第三阶段：冻结共享用户认证入口兼容性
 
-后续可逐步禁用：
+2026-05-19 范围修正：DK_Theme 仍需要共享 `Passport/User` API。后续不可按“仅后台”直接禁用这些路由，只能确认后台已不再依赖，并把它们作为分离前端 API 契约保留：
 
 - `V1 PassportRoute`
 - `V2 PassportRoute`
@@ -526,7 +526,7 @@ GET /api/v2/{secure_path}/auth/me
 - sendEmailVerify
 - user/info
 
-都应禁止继续作为后台依赖。
+都应禁止继续作为后台依赖，但不禁止 DK_Theme 正常调用。
 
 ---
 
@@ -609,8 +609,8 @@ GET /api/v2/{secure_path}/auth/me
 ### T4：进入 admin-only 收口
 
 - [ ] `/` 前台入口重定向或下线
-- [ ] 禁用共享 Passport/User 后台依赖
-- [ ] 再进入前台路由与用户 API 退役阶段
+- [ ] 禁止后台继续依赖共享 Passport/User
+- [ ] 再进入 DK_Theme 兼容矩阵冻结阶段，不删除前台 API
 
 ---
 

@@ -456,12 +456,12 @@ POST /api/v2/{secure_path}/auth/logout
 
 ### 第四步
 
-确认后台前端已不再依赖共享认证后，再禁用：
+确认后台前端已不再依赖共享认证后，也不能直接禁用共享会员 API；DK_Theme 仍依赖这些接口。后续只允许审计后台依赖是否解除：
 
-- `V1 PassportRoute`
-- `V2 PassportRoute`
-- `V1 UserRoute`
-- `V2 UserRoute`
+- `V1 PassportRoute`（保留给 DK_Theme）
+- `V2 PassportRoute`（保留兼容）
+- `V1 UserRoute`（保留给 DK_Theme）
+- `V2 UserRoute`（保留兼容）
 
 ---
 
@@ -486,11 +486,11 @@ POST /api/v2/{secure_path}/auth/logout
 - [ ] 初始化改调后台专属 `auth/me`
 - [ ] 退出改调后台专属 `auth/logout`
 
-### T4：共享用户认证退役准备
+### T4：共享用户认证兼容冻结准备
 
 - [ ] 审计后台是否还用 `token2Login`
 - [ ] 审计后台是否真的需要 `register/forget/sendEmailVerify`
-- [ ] 确认无依赖后再禁用共享入口
+- [ ] 确认 DK_Theme 依赖后冻结共享入口，不删除、不软封禁
 
 ---
 
@@ -508,7 +508,7 @@ POST /api/v2/{secure_path}/auth/logout
 
 只有完成这一步，后续才可以安全地：
 
-- 禁用会员登录
-- 下线会员前台
-- 清理共享认证兼容层
+- 让后台不再依赖会员登录链路
+- 下线 Xboard 内置会员前台壳层
+- 审计共享认证兼容层，但保留 DK_Theme 所需能力
 - 建立真正的后台专属认证边界

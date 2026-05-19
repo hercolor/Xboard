@@ -163,12 +163,12 @@
 
 ### 3.1 Phase 4 auth-focused delta refresh（2026-05-19）
 
-本节只冻结 Phase 3 之后和认证退役相关的增量事实，不重盘全仓 API：
+本节只冻结 Phase 3 之后和 DK_Theme 兼容相关的认证增量事实，不重盘全仓 API：
 
 - 后台认证已拆到 `POST /api/v2/{secure_path}/auth/login`、`GET /api/v2/{secure_path}/auth/me`、`POST /api/v2/{secure_path}/auth/logout`，路由落点为 `app/Http/Routes/V2/AdminAuthRoute.php`，控制器为 `app/Http/Controllers/V2/Admin/AuthController.php`。
 - 共享前台认证链路仍同时存在于 V1/V2 `passport`：`register/login/token2Login/forget/getQuickLoginUrl/loginWithMailLink/sendEmailVerify`；V2 仍复用 V1 `Passport\AuthController` 与 `Passport\CommController`。
 - `GET /api/v2/user/info` 仍由 `V2/UserRoute` 复用 `V1\User\UserController::info`；当前后台初始化已改为 `/{secure_path}/auth/me`，因此 `user/info` 是“剩余消费者验证项”，不是当前后台 blocker。
-- 共享认证退役决策的单一来源见 `docs/api-auth-retirement-matrix.md`。
+- 共享认证保留/兼容决策的单一来源见 `docs/api-auth-retirement-matrix.md`。
 - `external frontend dependency = unknown` 时禁止删除和软封禁；仓库没有外部分离前端源码时，必须把前台 API 文档契约视为保留证据。
 
 ### 结论
