@@ -1,7 +1,7 @@
 # Xboard 仅后台模式任务清单（DK_Theme API 保留）
 
 > 更新时间：2026-05-19
-> 当前阶段：Phase 3 已完成后台认证切换与 Web 前台入口收口；下一阶段只冻结 DK_Theme 依赖矩阵与内置壳层后续清理项，不删除共享会员 API。
+> 当前阶段：Phase 4 已完成 DK_Theme 兼容矩阵冻结与路由契约测试；下一阶段进入完整运行环境回归与自定义镜像发布准备。
 
 ---
 
@@ -104,19 +104,60 @@
 
 ### 任务
 
-- [ ] 刷新 `docs/api-interface-matrix.md` 中认证、通道、V1/V2 复用相关增量事实
-- [ ] 建立 `docs/api-auth-retirement-matrix.md` 作为共享认证保留/兼容决策矩阵
-- [ ] 审核 `passport/auth/token2Login`
-- [ ] 审核 `passport/auth/register`
-- [ ] 审核 `passport/auth/forget`
-- [ ] 审核 `passport/comm/sendEmailVerify`
-- [ ] 审核 `user/info` 等前台用户接口是否仍有依赖
-- [ ] 将 `passport/auth/loginWithMailLink`、`passport/auth/getQuickLoginUrl` 列为 watchlist，避免后续误删相邻邮件/快速登录入口
-- [ ] 产出后续实施队列；只有在确认无后台、分离前端、机器脚本、插件依赖后，才允许进入后续软封禁/删除 PRD
+- [x] 刷新 `docs/api-interface-matrix.md` 中认证、通道、V1/V2 复用相关增量事实
+- [x] 建立 `docs/api-auth-retirement-matrix.md` 作为共享认证保留/兼容决策矩阵
+- [x] 审核 `passport/auth/token2Login`
+- [x] 审核 `passport/auth/register`
+- [x] 审核 `passport/auth/forget`
+- [x] 审核 `passport/comm/sendEmailVerify`
+- [x] 审核 `user/info` 等前台用户接口是否仍有依赖
+- [x] 将 `passport/auth/loginWithMailLink`、`passport/auth/getQuickLoginUrl` 列为 watchlist，避免后续误删相邻邮件/快速登录入口
+- [x] 产出后续实施队列；只有在确认无后台、分离前端、机器脚本、插件依赖后，才允许进入后续软封禁/删除 PRD
+
+### 验证证据
+
+- `docs/api-auth-retirement-matrix.md` 已记录 DK_Theme 源码依赖证据与 `keep` 决策。
+- `tests/Feature/AdminOnlyShellContractTest.php` 已用 booted Laravel route collection 锁定：
+  - `/` 重定向后台安全路径
+  - 后台壳层路由仍挂载
+  - `/s/{token}` 订阅路由仍挂载
+  - V1/V2 Passport 登录、注册、找回密码、邮箱验证码、token/mail-link/quick-login 路由仍挂载
+  - V1/V2 `user/info` 仍挂载并保留 `user` middleware
+  - V1 Guest config/plan/payment notify/telegram webhook 仍挂载
+- 目标测试通过：`./vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Feature/AdminOnlyShellContractTest.php` → `2 tests, 29 assertions`。
+
+---
+
+## Phase 5 — 完整运行环境回归与镜像发布准备
+
+### 目标
+
+在不改变 DK_Theme API 契约的前提下，完成可运行环境验证，并为后续使用自有镜像替代官方镜像做准备。
+
+### 执行边界
+
+- 不删除、不软封禁共享 `Passport/User/Guest` API。
+- 不做 AES 返回加密。
+- 不修改订阅、节点、支付回调、Webhook、插件 Hook 通道。
+- 镜像发布准备只产出脚本/文档/配置建议；真正推送镜像前需具备仓库 token 与 GHCR 权限。
+
+### 任务
+
+- [ ] 修复本地测试环境缺失 sqlite PDO driver 的问题，或明确改用可用测试数据库。
+- [ ] 跑完整 PHPUnit，确认新增路由契约测试与既有 ServerHandshake 测试都通过。
+- [ ] 启动 Xboard 完整运行环境。
+- [ ] 回归 `/` → `/{secure_path}` 后台入口。
+- [ ] 回归后台登录、刷新 `auth/me`、退出登录。
+- [ ] 回归 `/s/{token}` 订阅链路。
+- [ ] 回归 DK_Theme 登录、注册、找回密码、邮箱验证码、`user/info`。
+- [ ] 回归 V1 Guest config/plan/payment notify/telegram webhook 的 smoke 级可达性。
+- [ ] 梳理自有镜像命名与 tag 策略，默认候选：`ghcr.io/hercolor/xboard:latest`。
+- [ ] 增加或更新构建/发布文档，说明 compose 中如何从官方镜像切换到自有镜像。
+- [ ] 如需自动发布，新增 GitHub Actions 构建 GHCR 镜像的方案或工作流。
 
 ---
 
 ## 风险提示
 
-- 当前环境无 `vendor/`，只能做静态验证，后续需在完整运行环境补功能回归。
-- 旧共享认证链路当前必须保留，否则会直接打断现有后台编译产物。
+- 当前环境已有 `vendor/`，但本地 PHP 缺少 sqlite PDO driver，完整 PHPUnit 仍被既有 ServerHandshake 测试阻断。
+- 旧共享认证链路当前必须保留，否则会打断 DK_Theme 登录、注册、找回密码、邮箱验证码与 `user/info`。

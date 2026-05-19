@@ -170,6 +170,7 @@
 - `GET /api/v2/user/info` 仍由 `V2/UserRoute` 复用 `V1\User\UserController::info`；当前后台初始化已改为 `/{secure_path}/auth/me`，因此 `user/info` 是“剩余消费者验证项”，不是当前后台 blocker。
 - 共享认证保留/兼容决策的单一来源见 `docs/api-auth-retirement-matrix.md`。
 - `external frontend dependency = unknown` 时禁止删除和软封禁；仓库没有外部分离前端源码时，必须把前台 API 文档契约视为保留证据。
+- `tests/Feature/AdminOnlyShellContractTest.php` 已补充 booted Laravel 路由契约测试，保护 DK_Theme 依赖的 V1/V2 Passport/User、V1 Guest、订阅与后台壳层路由挂载状态。
 
 ### 结论
 

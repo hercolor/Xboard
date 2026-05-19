@@ -38,6 +38,7 @@
 | 分离前端页面 | `../new-api/DK_Theme/src/pages/register-page.tsx`、`../new-api/DK_Theme/src/pages/forgot-password-page.tsx`、`../new-api/DK_Theme/src/features/auth/auth-context.tsx` | 注册、忘记密码、session hydrate 对应调用入口 |
 | V1/V2 复用审计 | `docs/api-v2-v1-reuse-decoupling-audit.md` | 记录 V2 Passport/User 复用 V1 controller 与混合响应风险 |
 | admin dist | `public/assets/admin/assets/index-BdbgNvrf.js` | 当前编译产物仍含部分 passport allowlist 字符串；同时含 `auth/me`、`auth/logout` |
+| 路由契约测试 | `tests/Feature/AdminOnlyShellContractTest.php` | 使用 booted Laravel route collection 保护 `/`、后台壳层、订阅、V1/V2 Passport/User 与 V1 Guest 路由仍挂载 |
 
 ---
 
@@ -81,6 +82,7 @@
 | P2 | 共享 Passport/User V1/V2 解耦 | 兼容矩阵确认哪些 endpoint 仍保留 | 新兼容层、独立 V2 shell、deprecation note |
 | P3 | 未来软封禁或物理删除候选 | 仅限确认无 admin、DK_Theme、机器脚本、插件依赖且有回滚方案的接口 | 单独 PRD + 测试 + 版本迁移说明 |
 | P4 | 响应 AES / 统一 envelope | response channel matrix 完成；明确排除订阅、节点、回调、导出流 | 仅对明确业务 JSON 通道做 opt-in |
+| P5 | 完整运行环境回归与自有镜像准备 | 本矩阵与路由契约测试已落地；测试环境具备 sqlite PDO 或可用数据库 | runtime smoke、compose/GHCR 文档或工作流；不改 API 契约 |
 
 ---
 
@@ -129,4 +131,4 @@ printf 'DEV_UP=%s\nROOT_CODE=%s\nADMIN_PATH=%s\nADMIN_CODE=%s\nAPI_CODE=%s\n' "$
 - `token2Login` 未在 DK_Theme 源码中命中，但仍属于前台 API 文档契约和邮件链接登录链路，继续保留为 `needs external confirmation`。
 - `token2Login` 和 watchlist 邮件/快速登录链路存在混合响应，不适合作为普通 JSON/AES 首批目标。
 - `user/info` 不再阻塞后台初始化，但仍是分离前端会员资料契约，应保留。
-- 下一步代码类工作应先做配置化软封禁 PRD 或 V1/V2 解耦 PRD，而不是直接删除共享路由。
+- 下一步先进入完整运行环境回归与自有镜像准备；后续若涉及共享认证改造，应先做配置化策略 PRD 或 V1/V2 解耦 PRD，而不是直接删除共享路由。
