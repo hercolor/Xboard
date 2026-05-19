@@ -94,13 +94,24 @@
 
 在后台完全切换后，再考虑下线不再需要的前台认证入口。
 
+### 执行边界
+
+- 本阶段只做审计、矩阵冻结和后续实施队列。
+- 不删除接口，不做 AES 返回加密，不修改订阅、节点、支付回调、Webhook、插件 Hook 通道。
+- 分离前端依赖为 `unknown` 时，视为删除/软封禁阻断条件。
+- `user/info` 当前不再是后台初始化 blocker；它是剩余消费者验证项。
+
 ### 任务
 
+- [ ] 刷新 `docs/api-interface-matrix.md` 中认证、通道、V1/V2 复用相关增量事实
+- [ ] 建立 `docs/api-auth-retirement-matrix.md` 作为共享认证退役决策矩阵
+- [ ] 审核 `passport/auth/token2Login`
 - [ ] 审核 `passport/auth/register`
 - [ ] 审核 `passport/auth/forget`
 - [ ] 审核 `passport/comm/sendEmailVerify`
 - [ ] 审核 `user/info` 等前台用户接口是否仍有依赖
-- [ ] 确认无后台依赖后逐步移除/封禁
+- [ ] 将 `passport/auth/loginWithMailLink`、`passport/auth/getQuickLoginUrl` 列为 watchlist，避免后续误删相邻邮件/快速登录入口
+- [ ] 产出后续实施队列；只有在确认无后台、分离前端、机器脚本、插件依赖后，才允许进入后续软封禁/删除 PRD
 
 ---
 

@@ -70,6 +70,7 @@
 
 | 通道 | 版本 | 模块 | 路由数 | 鉴权 | 控制器 | 校验入口 | 响应类型 | 风险等级 | 首批建议 |
 |---|---|---:|---:|---|---|---|---|---|---|
+| Admin | V2 | `auth` | 3 | 登录无鉴权；`me/logout` 使用 Sanctum User + Admin | `V2\Admin\AuthController` | `FormRequest(Admin\AuthLogin)` + `user/admin` middleware | `success/fail`，兼容 `auth_data` | 中 | 已完成后台认证拆分，冻结 |
 | Admin | V2 | `config` | 6 | Sanctum Admin + Log | `ConfigController` | `FormRequest(ConfigSave)` + 内部判断 | `mixed` | 中高 | 第二批 |
 | Admin | V2 | `mail/template` | 5 | Sanctum Admin + Log | `MailTemplateController` | 内部判断为主 | `success/fail` | 中 | 可首批 |
 | Admin | V2 | `plan` | 5 | Sanctum Admin + Log | `PlanController` | `FormRequest` | `success/fail` | 中 | 可首批 |
@@ -159,6 +160,16 @@
 | `V2/PassportRoute` | `App\Http\Controllers\V1\Passport\AuthController` | 登录/注册链路双版本共振 |
 | `V2/PassportRoute` | `App\Http\Controllers\V1\Passport\CommController` | 邮件验证码等行为共振 |
 | `V2/ServerRoute` 部分 | `App\Http\Controllers\V1\Server\UniProxyController` | 节点协议兼容性风险极高 |
+
+### 3.1 Phase 4 auth-focused delta refresh（2026-05-19）
+
+本节只冻结 Phase 3 之后和认证退役相关的增量事实，不重盘全仓 API：
+
+- 后台认证已拆到 `POST /api/v2/{secure_path}/auth/login`、`GET /api/v2/{secure_path}/auth/me`、`POST /api/v2/{secure_path}/auth/logout`，路由落点为 `app/Http/Routes/V2/AdminAuthRoute.php`，控制器为 `app/Http/Controllers/V2/Admin/AuthController.php`。
+- 共享前台认证链路仍同时存在于 V1/V2 `passport`：`register/login/token2Login/forget/getQuickLoginUrl/loginWithMailLink/sendEmailVerify`；V2 仍复用 V1 `Passport\AuthController` 与 `Passport\CommController`。
+- `GET /api/v2/user/info` 仍由 `V2/UserRoute` 复用 `V1\User\UserController::info`；当前后台初始化已改为 `/{secure_path}/auth/me`，因此 `user/info` 是“剩余消费者验证项”，不是当前后台 blocker。
+- 共享认证退役决策的单一来源见 `docs/api-auth-retirement-matrix.md`。
+- `external frontend dependency = unknown` 时禁止删除和软封禁；仓库没有外部分离前端源码时，必须把前台 API 文档契约视为保留证据。
 
 ### 结论
 
@@ -275,4 +286,3 @@
 6. 它在不在首批白名单里？
 
 只有这 6 个问题都清楚，才进入代码修改。
-
