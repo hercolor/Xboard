@@ -209,7 +209,7 @@ start_laravel() {
 }
 
 secure_path() {
-  "$PHP_WRAPPER" -r '$key=""; foreach (file(".env", FILE_IGNORE_NEW_LINES) as $line) { if (str_starts_with($line, "APP_KEY=")) { $key=substr($line, 8); break; } } echo hash("crc32b", trim($key));'
+  "$PHP_WRAPPER" -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo ltrim((string) admin_setting("secure_path", admin_setting("frontend_admin_path", hash("crc32b", config("app.key")))), "/");' 2>/dev/null || true;
 }
 
 smoke() {

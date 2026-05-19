@@ -18,7 +18,7 @@ REDIS_LIB_DIR="$LOCAL_DIR/lib-root/usr/lib/x86_64-linux-gnu"
 status_line() { printf '%-18s %s\n' "$1" "$2"; }
 http_code() { local out; out="$(curl -sS --max-time 3 -o /dev/null -w '%{http_code}' "$1" 2>/dev/null || true)"; printf '%s' "${out:-000}"; }
 head_code() { local out; out="$(curl -IsS --max-time 3 "$1" 2>/dev/null | awk 'NR==1 {print $2}' || true)"; printf '%s' "${out:-000}"; }
-secure_path() { "$PHP_BIN" -r '$key=""; foreach (file(".env", FILE_IGNORE_NEW_LINES) as $line) { if (str_starts_with($line, "APP_KEY=")) { $key=substr($line, 8); break; } } echo hash("crc32b", trim($key));' 2>/dev/null || true; }
+secure_path() { "$PHP_BIN" -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo ltrim((string) admin_setting("secure_path", admin_setting("frontend_admin_path", hash("crc32b", config("app.key")))), "/");' 2>/dev/null || true; }
 redis_ping() {
   [ -n "$REDIS_CLI" ] || return 1
   if [ -d "$REDIS_LIB_DIR" ]; then
