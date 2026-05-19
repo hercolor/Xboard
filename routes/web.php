@@ -14,12 +14,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/', function () {
-    $securePath = admin_setting(
-        'secure_path',
-        admin_setting('frontend_admin_path', hash('crc32b', config('app.key')))
-    );
-
-    return redirect()->to('/' . ltrim($securePath, '/'));
+    abort(404);
 });
 
 //TODO:: 兼容

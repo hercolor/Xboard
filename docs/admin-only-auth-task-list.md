@@ -81,7 +81,7 @@
 
 ### 任务
 
-- [x] 处理 `/` 的行为（当前采用重定向到 `/{secure_path}` 的低风险策略）
+- [x] 处理 `/` 的行为（当前按隐藏后台入口要求返回 404，不跳转 `/{secure_path}`）
 - [x] 下线会员前台主题壳层加载（`routes/web.php` 不再渲染 `theme::*.dashboard`）
 - [x] 明确保留订阅、节点、回调、Webhook 等通道（本轮未改 `/api/*`、`/s/{token}` 与基础设施通道）
 - [ ] 回归订阅链接、支付回调、机器通信能力（待完整运行环境）
@@ -118,13 +118,13 @@
 
 - `docs/api-auth-retirement-matrix.md` 已记录 DK_Theme 源码依赖证据与 `keep` 决策。
 - `tests/Feature/AdminOnlyShellContractTest.php` 已用 booted Laravel route collection 锁定：
-  - `/` 重定向后台安全路径
+  - `/` 返回 404，不暴露后台安全路径
   - 后台壳层路由仍挂载
   - `/s/{token}` 订阅路由仍挂载
   - V1/V2 Passport 登录、注册、找回密码、邮箱验证码、token/mail-link/quick-login 路由仍挂载
   - V1/V2 `user/info` 仍挂载并保留 `user` middleware
   - V1 Guest config/plan/payment notify/telegram webhook 仍挂载
-- 目标测试通过：`./vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Feature/AdminOnlyShellContractTest.php` → `2 tests, 29 assertions`。
+- 目标测试通过：`./vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Feature/AdminOnlyShellContractTest.php` → `2 tests, 28 assertions`。
 
 ---
 
@@ -146,7 +146,7 @@
 - [x] 修复本地测试环境缺失 sqlite PDO driver 的问题，或明确改用可用测试数据库。
 - [x] 跑完整 PHPUnit，确认新增路由契约测试与既有 ServerHandshake 测试都通过。
 - [x] 启动 Xboard 完整运行环境。
-- [x] 回归 `/` → `/{secure_path}` 后台入口。
+- [x] 回归 `/` → 404，且 `/{secure_path}` 后台入口仍可访问。
 - [ ] 回归后台登录、刷新 `auth/me`、退出登录。
 - [ ] 回归 `/s/{token}` 订阅链路。
 - [ ] 回归 DK_Theme 登录、注册、找回密码、邮箱验证码、`user/info`。
@@ -160,8 +160,8 @@
 ### 已完成验证记录
 
 - 测试环境：`.local/bin/php-xboard` 已加载 `pdo_mysql,pdo_sqlite,sqlite3`。
-- 完整 PHPUnit：`.local/bin/php-xboard ./vendor/bin/phpunit --bootstrap vendor/autoload.php tests` → `9 tests, 41 assertions`。
-- 本地运行环境：`./scripts/dev-up.sh` 通过，输出 `/ -> 302`、`/{secure_path} -> 200`、guest config API `200`。
+- 完整 PHPUnit：`.local/bin/php-xboard ./vendor/bin/phpunit --bootstrap vendor/autoload.php tests` → `9 tests, 40 assertions`。
+- 本地运行环境：`./scripts/dev-up.sh` 通过，输出 `/ -> 404`、`/{secure_path} -> 200`、guest config API `200`。
 - `./scripts/dev-status.sh` 确认 Redis OK、SQLite DB、后台入口 `200`、API `200`。
 - 额外 smoke：`/api/v1/guest/comm/config` → `200`，`/api/v1/guest/plan/fetch` → `200`，空 payload 访问 `passport/auth/login` 返回 `422`，未登录访问 `user/info` 返回 `403`，证明路由可达且仍保留校验/鉴权边界。
 - 自有镜像文档：`docs/custom-image-deployment.md`。

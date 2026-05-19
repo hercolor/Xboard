@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use Closure;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Route;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tests\TestCase;
 
 final class AdminOnlyShellContractTest extends TestCase
 {
-    public function test_root_redirects_to_admin_shell_and_admin_shell_route_is_mounted(): void
+    public function test_root_returns_not_found_while_admin_shell_and_subscribe_routes_remain_mounted(): void
     {
         $securePath = ltrim((string) admin_setting(
             'secure_path',
@@ -23,10 +23,12 @@ final class AdminOnlyShellContractTest extends TestCase
 
         $this->assertInstanceOf(Closure::class, $rootAction);
 
-        $response = $rootAction();
-
-        $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/' . $securePath, parse_url($response->getTargetUrl(), PHP_URL_PATH));
+        try {
+            $rootAction();
+            $this->fail('Expected public root [/] to return 404 instead of exposing the admin shell.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(404, $exception->getStatusCode());
+        }
 
         $this->assertRouteIsMounted('GET', $securePath);
         $this->assertRouteIsMounted('GET', admin_setting('subscribe_path', 's') . '/{token}');

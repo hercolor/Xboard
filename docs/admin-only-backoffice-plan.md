@@ -184,7 +184,7 @@
 ```text
 Browser
 ├─ /{secure_path}            -> Admin SPA
-└─ /                         -> 不再提供会员前台（重定向或 404）
+└─ /                         -> 不再提供会员前台（404，不跳转后台）
 
 Admin SPA
 └─ 仅调用后台专属 API
@@ -258,25 +258,24 @@ Infrastructure APIs
 
 | 路径 | 当前 | 目标 | 说明 |
 | --- | --- | --- | --- |
-| `/` | 用户前台 SPA | 重定向到 `/{secure_path}` 或返回 404 | 建议优先重定向，后续可切 404 |
+| `/` | 用户前台 SPA | 返回 404 | 默认不跳转后台入口，避免暴露 `secure_path` |
 | `/{secure_path}` | 后台 SPA | 保留 | 主入口 |
 | `/{subscribe_path}/{token}` | 订阅分发 | 保留 | 基础设施通道 |
 
 ### 对 `/` 的建议
 
-短期建议：
+当前要求：
 
-- 直接 `redirect('/' . secure_path)`
+- 直接返回 404
+- 不从 `/` 重定向到 `/{secure_path}`
 
 原因：
 
-- 对现网最温和
-- 不影响运维入口记忆
-- 方便快速切到“只有后台”的使用方式
+- 避免公开根路径泄露隐藏后台入口
+- 保持“只有后台壳层、无会员 Web 前台”的目标
+- 运维应直接使用已配置的 `secure_path` 访问后台
 
-中期建议：
-
-- 支持切成 404 或简单静态 landing
+后续若需要 landing page，应先形成独立 PRD，且不得自动暴露后台路径
 
 ---
 
@@ -408,9 +407,7 @@ Infrastructure APIs
 实施项：
 
 1. `routes/web.php` 中 `/` 不再渲染 `theme::...dashboard`
-2. 改为：
-   - 重定向到 `/{secure_path}`
-   - 或返回 404
+2. 改为返回 404，不跳转 `/{secure_path}`
 3. 前台主题加载链路退出主运行路径：
    - `ThemeService`
    - `theme/Xboard/*`
@@ -448,7 +445,7 @@ Infrastructure APIs
 实施项：
 
 1. `/` 不再渲染 `theme::*.dashboard` 会员壳层
-2. `/` 采用重定向到后台入口或 404 的低风险策略
+2. `/` 返回 404，不从公开根路径跳转后台入口
 3. 保留 `V1 PassportRoute`
 4. 保留 `V2 PassportRoute`
 5. 保留 `V1 UserRoute`
@@ -570,8 +567,8 @@ Infrastructure APIs
 
 ### T3：关闭 `/` 前台入口
 
-- [ ] `/` 改为重定向到 `/{secure_path}`
-- [ ] 或返回 404
+- [ ] `/` 改为返回 404
+- [ ] 确认 `/` 不重定向到 `/{secure_path}`
 - [ ] 前台 Theme 渲染链退出主入口
 
 ### T4：新增后台专属 Auth API

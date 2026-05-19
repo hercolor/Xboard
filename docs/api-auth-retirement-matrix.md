@@ -107,9 +107,8 @@ DEV_UP=$?
 ROOT_HEADERS="$(curl -IsS --max-time 5 http://127.0.0.1:8001/)"
 printf '%s\n' "$ROOT_HEADERS" | head -20
 ROOT_CODE="$(printf '%s\n' "$ROOT_HEADERS" | awk 'NR==1 {print $2}')"
-ADMIN_PATH="$(printf '%s\n' "$ROOT_HEADERS" | awk 'tolower($1)=="location:" {print $2}' | tr -d '\r' | sed -E 's#^https?://[^/]+##; s#^/##; s#/$##')"
-ADMIN_CODE="000"
-[ -n "$ADMIN_PATH" ] && ADMIN_CODE="$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8001/${ADMIN_PATH}" 2>/dev/null || echo 000)"
+ADMIN_PATH="$(.local/bin/php-xboard -r '$key=""; foreach (file(".env", FILE_IGNORE_NEW_LINES) as $line) { if (str_starts_with($line, "APP_KEY=")) { $key=substr($line, 8); break; } } echo hash("crc32b", trim($key));')"
+ADMIN_CODE="$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8001/${ADMIN_PATH}" 2>/dev/null || echo 000)"
 API_CODE="$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/api/v1/guest/comm/config 2>/dev/null || echo 000)"
 printf 'DEV_UP=%s\nROOT_CODE=%s\nADMIN_PATH=%s\nADMIN_CODE=%s\nAPI_CODE=%s\n' "$DEV_UP" "$ROOT_CODE" "$ADMIN_PATH" "$ADMIN_CODE" "$API_CODE"
 ./scripts/dev-down.sh
@@ -117,10 +116,10 @@ printf 'DEV_UP=%s\nROOT_CODE=%s\nADMIN_PATH=%s\nADMIN_CODE=%s\nAPI_CODE=%s\n' "$
 
 运行验证 pass condition：
 
-- `/` 返回 `302`，且存在 `Location` header。
-- 从 `/` 的 `Location` 提取出的 `/${ADMIN_PATH}` 返回 `200`，这是后台入口真值。
+- `/` 返回 `404`，且不依赖 `Location` 暴露后台入口。
+- 显式访问已知 `/${ADMIN_PATH}` 返回 `200`，证明后台入口仍可用。
 - `/api/v1/guest/comm/config` 返回非 `5xx`，用于确认 guest API 壳层未被破坏。
-- `scripts/dev-up.sh` / `scripts/dev-status.sh` 中基于 `APP_KEY` hash 推导的 `secure_path` 只能作为启动/状态辅助信息，不作为最终 pass/fail 依据。
+- `scripts/dev-up.sh` / `scripts/dev-status.sh` 中基于 `APP_KEY` hash 推导的 `secure_path` 用于启动/状态辅助与后台入口 smoke；不得重新从 `/` 的跳转推导后台路径。
 - 本阶段若只改文档，runtime smoke 失败也必须记录原因；不得声称完整浏览器 E2E 已通过。
 
 ---

@@ -608,7 +608,7 @@ GET /api/v2/{secure_path}/auth/me
 
 ### T4：进入 admin-only 收口
 
-- [ ] `/` 前台入口重定向或下线
+- [ ] `/` 前台入口返回 404，不跳转后台入口
 - [ ] 禁止后台继续依赖共享 Passport/User
 - [ ] 再进入 DK_Theme 兼容矩阵冻结阶段，不删除前台 API
 

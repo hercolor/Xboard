@@ -218,10 +218,10 @@ smoke() {
   http_root="$(curl -IsS --max-time 5 "http://$APP_HOST:$APP_PORT/" | awk 'NR==1 {print $2}')"
   http_admin="$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "http://$APP_HOST:$APP_PORT/$secure")"
   http_api="$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "http://$APP_HOST:$APP_PORT/api/v1/guest/comm/config")"
-  [ "$http_root" = "302" ] || fail "root smoke expected 302, got $http_root"
+  [ "$http_root" = "404" ] || fail "root smoke expected 404, got $http_root"
   [ "$http_admin" = "200" ] || fail "admin smoke expected 200, got $http_admin"
   [ "$http_api" = "200" ] || fail "api smoke expected 200, got $http_api"
-  log "smoke OK: / -> 302, /$secure -> 200, guest config API -> 200"
+  log "smoke OK: / -> 404, /$secure -> 200, guest config API -> 200"
   printf '\nXboard local runtime is ready:\n'
   printf '  URL:   http://%s:%s/%s\n' "$APP_HOST" "$APP_PORT" "$secure"
   printf '  Redis: %s:%s\n' "$REDIS_HOST" "$REDIS_PORT"

@@ -113,7 +113,7 @@ volumes:
 当前应满足：
 
 - PHPUnit 全量通过
-- `/` 返回 302 并跳转后台安全路径
+- `/` 返回 404，不跳转后台安全路径
 - 后台入口返回 200
 - `/api/v1/guest/comm/config` 返回 200
 - DK_Theme 所需 V1/V2 Passport/User 路由由 `tests/Feature/AdminOnlyShellContractTest.php` 保护
