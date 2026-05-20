@@ -13,5 +13,7 @@ parameters:
     ignoreErrors:
         - '#Negated boolean expression is always false\.#'
 
+    reportUnmatchedIgnoredErrors: false
+
 #    excludePaths:
 #        - ./*/*/FileToBeExcluded.php

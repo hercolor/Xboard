@@ -236,6 +236,12 @@ log "OK: public root / -> HTTP 404"
 code="$(http_code "$BASE_URL/$secure")"
 assert_code 200 "$code" "admin shell /$secure"
 
+code="$(http_code -H 'X-Request-Id: e2e-app-api-bootstrap' "$BASE_URL/api/app/v1/bootstrap")"
+assert_code 200 "$code" "App API bootstrap"
+assert_json_path /tmp/e2e-body.$$ ok true "App API bootstrap ok"
+assert_json_path /tmp/e2e-body.$$ code OK "App API bootstrap code"
+assert_json_path /tmp/e2e-body.$$ meta.trace_id e2e-app-api-bootstrap "App API bootstrap trace"
+
 code="$(post_json "$BASE_URL/api/v2/$secure/auth/login" "{\"email\":\"$admin_email\",\"password\":\"$password\"}")"
 assert_code 200 "$code" "admin auth/login"
 assert_json_path /tmp/e2e-body.$$ status success "admin auth/login JSON status"

@@ -35,6 +35,7 @@ class RouteServiceProvider extends ServiceProvider
     public function map()
     {
         $this->mapApiRoutes();
+        $this->mapAppApiRoutes();
         $this->mapWebRoutes();
 
         //
@@ -82,6 +83,27 @@ class RouteServiceProvider extends ServiceProvider
             foreach (glob(app_path('Http//Routes//V2') . '/*.php') as $file) {
                 $this->app->make('App\\Http\\Routes\\V2\\' . basename($file, '.php'))->map($router);
             }
+        });
+    }
+
+    /**
+     * Define the additive frontend/app BFF routes.
+     *
+     * These routes intentionally live outside the V1/V2 route-file globs so
+     * they mount under /api/app/v1 only and cannot shadow legacy clients.
+     *
+     * @return void
+     */
+    protected function mapAppApiRoutes()
+    {
+        Route::group([
+            'prefix' => '/api/app/v1',
+            'middleware' => [
+                'api',
+                \App\Http\Middleware\AppApiResponseBoundary::class,
+            ],
+        ], function () {
+            require base_path('routes/app_api.php');
         });
     }
 }
