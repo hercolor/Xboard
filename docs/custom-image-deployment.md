@@ -108,6 +108,7 @@ volumes:
 .local/bin/php-xboard ./vendor/bin/phpunit --bootstrap vendor/autoload.php tests
 ./scripts/dev-up.sh
 ./scripts/dev-status.sh
+./scripts/e2e-smoke.sh
 ```
 
 当前应满足：
@@ -117,6 +118,7 @@ volumes:
 - 后台入口返回 200
 - `/api/v1/guest/comm/config` 返回 200
 - DK_Theme 所需 V1/V2 Passport/User 路由由 `tests/Feature/AdminOnlyShellContractTest.php` 保护
+- `./scripts/e2e-smoke.sh` 通过后台 auth、DK_Theme API 契约、订阅、Guest config/plan、Telegram webhook 与 payment notify 路由边界 smoke
 
 ## 6. DK_Theme 兼容边界
 

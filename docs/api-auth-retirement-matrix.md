@@ -131,3 +131,12 @@ printf 'DEV_UP=%s\nROOT_CODE=%s\nADMIN_PATH=%s\nADMIN_CODE=%s\nAPI_CODE=%s\n' "$
 - `token2Login` 和 watchlist 邮件/快速登录链路存在混合响应，不适合作为普通 JSON/AES 首批目标。
 - `user/info` 不再阻塞后台初始化，但仍是分离前端会员资料契约，应保留。
 - 下一步先进入完整运行环境回归与自有镜像准备；后续若涉及共享认证改造，应先做配置化策略 PRD 或 V1/V2 解耦 PRD，而不是直接删除共享路由。
+
+## 9. E2E smoke 补充证据
+
+`./scripts/e2e-smoke.sh` 已覆盖共享认证保留决策的运行时证据：
+
+- 后台认证已走 `POST/GET/POST /api/v2/{secure_path}/auth/*`，且 logout 后旧 token 访问 `auth/me` 返回 `403`。
+- DK_Theme 依赖的 V1/V2 `passport/auth/login`、V1 `passport/auth/register`、V1 `passport/auth/forget`、V1 `passport/comm/sendEmailVerify`、V1/V2 `user/info` 可用。
+- `/s/{token}` 使用临时可用用户与临时 SS 节点返回 `200`，带 `subscription-userinfo`，正文可解码为 `ss://` 节点。
+- payment notify 在无支付 provider fixture 时只做路由/controller 边界 smoke：确认不是 `404/405`；真实支付验签仍需具体支付插件配置。

@@ -147,10 +147,10 @@
 - [x] 跑完整 PHPUnit，确认新增路由契约测试与既有 ServerHandshake 测试都通过。
 - [x] 启动 Xboard 完整运行环境。
 - [x] 回归 `/` → 404，且 `/{secure_path}` 后台入口仍可访问。
-- [ ] 回归后台登录、刷新 `auth/me`、退出登录。
-- [ ] 回归 `/s/{token}` 订阅链路。
-- [ ] 回归 DK_Theme 登录、注册、找回密码、邮箱验证码、`user/info`。
-- [ ] 回归 V1 Guest payment notify/telegram webhook 的 smoke 级可达性。
+- [x] 回归后台登录、刷新 `auth/me`、退出登录。
+- [x] 回归 `/s/{token}` 订阅链路。
+- [x] 回归 DK_Theme 登录、注册、找回密码、邮箱验证码、`user/info` 的后端 API 契约。
+- [x] 回归 V1 Guest payment notify/telegram webhook 的 smoke 级可达性。
 - [x] 回归 V1 Guest config/plan 的 smoke 级可达性。
 - [x] 梳理自有镜像命名与 tag 策略，默认候选：`ghcr.io/hercolor/xboard:latest`。
 - [x] 增加或更新构建/发布文档，说明 compose 中如何从官方镜像切换到自有镜像。
@@ -164,6 +164,15 @@
 - 本地运行环境：`./scripts/dev-up.sh` 通过，输出 `/ -> 404`、`/{secure_path} -> 200`、guest config API `200`。
 - `./scripts/dev-status.sh` 确认 Redis OK、SQLite DB、后台入口 `200`、API `200`。
 - 额外 smoke：`/api/v1/guest/comm/config` → `200`，`/api/v1/guest/plan/fetch` → `200`，空 payload 访问 `passport/auth/login` 返回 `422`，未登录访问 `user/info` 返回 `403`，证明路由可达且仍保留校验/鉴权边界。
+
+- E2E smoke 脚本：`./scripts/e2e-smoke.sh` 会创建临时 admin/member/plan/group/shadowsocks 节点 fixture，验证后自动清理。
+- E2E smoke 覆盖：
+  - `/` → `404`，`/{secure_path}` → `200`（`secure_path` 读取系统配置）。
+  - 后台 `POST /api/v2/{secure_path}/auth/login`、`GET /auth/me`、`POST /auth/logout`，并确认 logout 后 token 失效。
+  - DK_Theme 后端 API 契约：V1/V2 `passport/auth/login`、V1 `passport/auth/register`、V1 `passport/auth/forget`、V1 `passport/comm/sendEmailVerify`、V1/V2 `user/info`、`getQuickLoginUrl`、`token2Login` redirect。
+  - 订阅链路：临时可用用户 + 临时 SS 节点，`/{subscribe_path}/{token}` 返回 `200`、带 `subscription-userinfo`，base64 解码后包含 `ss://` 节点。
+  - Guest：`comm/config`、`plan/fetch` 返回 `200`；Telegram 空 update webhook 返回 `200`；payment notify 路由到达 controller 边界，因无支付插件/provider fixture 返回预期失败而非 404/405。
+- E2E smoke 结果：`./scripts/e2e-smoke.sh` → `E2E smoke passed`，fixture 清理后 `xboard-e2e-*` 用户/节点/套餐/分组计数均为 `0`。
 - 自有镜像文档：`docs/custom-image-deployment.md`。
 - GHCR workflow：`.github/workflows/docker-publish.yml` 统一小写镜像名，并在 metadata 前生成 version。
 
