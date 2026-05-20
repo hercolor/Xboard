@@ -272,6 +272,10 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 - 2026-05-20: Session and legacy fallback contract tests expanded.
   - `tests/Feature/AppApi/AppApiBootstrapTest.php` now locks `/api/app/v1/session` allowlist behavior, legacy `user/info` and `getSubscribe` route boundaries, and documented fallback field fragments without requiring a DB driver.
   - No new App session fields, no client changes, no dashboard, no AES.
+- 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
+  - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
+  - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
+  - Request-count note: this first slice is migration readiness, not guaranteed request reduction.
 
 ### Current next task
 
