@@ -265,11 +265,15 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Audit artifact: `docs/app-api-dashboard-client-waterfall-audit.md`.
   - Decision: do not implement `/api/app/v1/dashboard` yet.
   - DK_Theme has a safer first migration target in `/api/app/v1/session`; hiddify-app still depends on raw subscription download.
+- 2026-05-20: Session migration compatibility plan completed.
+  - Planning artifact: `docs/app-api-session-migration-compatibility-plan.md`.
+  - Decision: `/api/app/v1/session` can only replace non-secret auth/session summary fields; subscription delivery remains on legacy endpoints.
+  - Fallback strategy: client opt-in flag first, legacy calls remain the rollback path.
 
 ### Current next task
 
-Recommended next execution if optimizing without dashboard:
+Recommended next backend-only execution:
 
 ```text
-$ralph "迁移前准备：为 /api/app/v1/session 增加可选兼容字段映射文档和客户端 fallback 方案；不改 DK_Theme/hiddify-app 代码，不实现 dashboard，不改旧 API，不做 AES。"
+$ralph "为 /api/app/v1/session 增加 contract fixture 文档对应测试：只断言现有字段、secret 不泄漏、legacy user/info 与 getSubscribe 不变；不新增字段，不改客户端，不实现 dashboard，不做 AES。"
 ```

@@ -289,3 +289,7 @@ Next gate before dashboard implementation remains the prerequisite list in secti
 ## 14. Client waterfall evidence
 
 See `docs/app-api-dashboard-client-waterfall-audit.md`. Current conclusion remains: do not implement `/api/app/v1/dashboard` yet. DK_Theme should first evaluate `/api/app/v1/session` migration/fallback for the non-secret auth/session subset; hiddify-app still requires login, subscription metadata, and raw subscription content, so dashboard would not remove its critical-path dependency.
+
+## 15. Session-first migration gate
+
+See `docs/app-api-session-migration-compatibility-plan.md`. The approved migration-prep direction is session-first, not dashboard-first: `/api/app/v1/session` may serve non-secret DK_Theme auth/session summary fields behind a client opt-in flag, while subscription delivery (`subscribe_url`, `token`, raw subscription download) remains on legacy endpoints. Any optional session field extension such as balances or plan name requires explicit approval, allowlist tests, and query-budget checks.
