@@ -7,7 +7,23 @@ use Closure;
 
 class RequestLog
 {
-    private const SENSITIVE_KEYS = ['password', 'token', 'secret', 'key', 'api_key'];
+    private const REDACTED = '[REDACTED]';
+
+    private const SENSITIVE_KEYS = [
+        'password',
+        'password_confirmation',
+        'token',
+        'secret',
+        'key',
+        'api_key',
+        'auth_data',
+        'authdata',
+        'subscribe_url',
+        'subscribeurl',
+        'subscription_url',
+        'subscriptionurl',
+        'authorization',
+    ];
 
     public function handle($request, Closure $next)
     {
@@ -24,7 +40,7 @@ class RequestLog
             }
 
             $action = $this->resolveAction($request->path());
-            $data = collect($request->all())->except(self::SENSITIVE_KEYS)->toArray();
+            $data = self::redactSensitiveData($request->all());
 
             AdminAuditLog::insert([
                 'admin_id' => $admin->id,
@@ -41,6 +57,45 @@ class RequestLog
         }
 
         return $response;
+    }
+
+    /**
+     * Redact sensitive request data before it is persisted to admin audit logs.
+     *
+     * This is intentionally recursive because secrets are often nested under
+     * provider config objects (payment/webhook/node/plugin settings).
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public static function redactSensitiveData(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (self::isSensitiveKey((string) $key)) {
+                $data[$key] = self::REDACTED;
+                continue;
+            }
+
+            if (is_array($value)) {
+                $data[$key] = self::redactSensitiveData($value);
+            }
+        }
+
+        return $data;
+    }
+
+    private static function isSensitiveKey(string $key): bool
+    {
+        $normalized = strtolower(str_replace(['-', '.'], '_', $key));
+
+        if (in_array($normalized, self::SENSITIVE_KEYS, true)) {
+            return true;
+        }
+
+        return str_contains($normalized, 'password')
+            || str_ends_with($normalized, '_token')
+            || str_ends_with($normalized, '_secret')
+            || str_ends_with($normalized, '_key');
     }
 
     private function resolveAction(string $path): string

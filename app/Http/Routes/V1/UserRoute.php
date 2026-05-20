@@ -26,7 +26,7 @@ class UserRoute
         ], function ($router) {
             // User
             $router->get('/resetSecurity', [UserController::class, 'resetSecurity']);
-            $router->get('/info', [UserController::class, 'info']);
+            $router->get('/info', [UserController::class, 'info'])->middleware('throttle:user-read');
             $router->post('/changePassword', [UserController::class, 'changePassword']);
             $router->post('/update', [UserController::class, 'update']);
             $router->get('/getSubscribe', [UserController::class, 'getSubscribe']);

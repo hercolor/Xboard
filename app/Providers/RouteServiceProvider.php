@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
@@ -24,6 +27,8 @@ class RouteServiceProvider extends ServiceProvider
     public function boot()
     {
         // HTTPS scheme is forced per-request via middleware (Octane-safe).
+        $this->configureApiRateLimiting();
+
         parent::boot();
     }
 
@@ -105,5 +110,64 @@ class RouteServiceProvider extends ServiceProvider
         ], function () {
             require base_path('routes/app_api.php');
         });
+    }
+
+    /**
+     * Configure scoped API rate limiters for the security pilot.
+     *
+     * These named limiters are intentionally applied route-by-route instead
+     * of enabling a global API throttle, because subscription, node, payment,
+     * Telegram, and plugin-sensitive channels have separate protocol budgets.
+     */
+    private function configureApiRateLimiting(): void
+    {
+        RateLimiter::for('passport-login', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $email = strtolower((string) $request->input('email', 'anonymous'));
+
+            return Limit::perMinute((int) config('api_security.rate_limits.passport_login_per_minute', 20))
+                ->by($request->ip() . '|login|' . $email);
+        });
+
+        RateLimiter::for('passport-email', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $email = strtolower((string) $request->input('email', 'anonymous'));
+
+            return Limit::perMinute((int) config('api_security.rate_limits.passport_email_per_minute', 3))
+                ->by($request->ip() . '|email|' . $email);
+        });
+
+        RateLimiter::for('user-read', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $userId = $request->user()?->id ?: 'guest';
+
+            return Limit::perMinute((int) config('api_security.rate_limits.user_read_per_minute', 120))
+                ->by($request->ip() . '|user|' . $userId);
+        });
+
+        RateLimiter::for('app-read', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $userId = $request->user()?->id ?: 'guest';
+
+            return Limit::perMinute((int) config('api_security.rate_limits.app_read_per_minute', 120))
+                ->by($request->ip() . '|app|' . $userId);
+        });
+    }
+
+    private function apiRateLimitsEnabled(): bool
+    {
+        return (bool) config('api_security.rate_limits.enabled', true);
     }
 }

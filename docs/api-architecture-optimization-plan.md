@@ -7,7 +7,9 @@
 
 ## 0. Planning boundary
 
-This is a planning artifact only. It does not implement code.
+This plan has started execution. Phase 0 + Phase 1 pilot status is tracked in `docs/api-security-performance-budget-matrix.md`.
+
+The original planning artifact does not itself implement code; implementation slices must remain bounded by the guardrails below.
 
 ### Skip / preserve already-completed work
 
@@ -559,3 +561,14 @@ Recommended durable follow-up:
 ```text
 $performance-goal "以 .omx/plans/ralplan-api-architecture-optimization.md 为目标，分阶段提升 Xboard API 安全、并发和响应速度；每阶段必须保留旧 API/订阅/节点/支付/Telegram 兼容，并提供测试与指标证据。"
 ```
+
+## 12. Execution status
+
+### Completed
+
+- 2026-05-20: Phase 0 + Phase 1 pilot first slice started.
+  - Added `docs/api-security-performance-budget-matrix.md`.
+  - Added route-scoped rate-limit pilot for selected passport login, passport email verify, user info, and App BFF read routes.
+  - Added config kill switch via `API_RATE_LIMITS_ENABLED=false`.
+  - Added recursive admin audit log redaction and tests.
+  - No global API throttle, no AES, no dashboard route, no legacy response shape change.
