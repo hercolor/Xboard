@@ -284,3 +284,8 @@ Still intentionally not done:
 - No subscription, node/server, payment, Telegram, or plugin behavior changes.
 
 Next gate before dashboard implementation remains the prerequisite list in section 11: product consumer decision, field approval, measured frontend request waterfall, query-count harness, payload budget tests, and feature-flag/fallback plan.
+
+
+## 14. Client waterfall evidence
+
+See `docs/app-api-dashboard-client-waterfall-audit.md`. Current conclusion remains: do not implement `/api/app/v1/dashboard` yet. DK_Theme should first evaluate `/api/app/v1/session` migration/fallback for the non-secret auth/session subset; hiddify-app still requires login, subscription metadata, and raw subscription content, so dashboard would not remove its critical-path dependency.

@@ -261,11 +261,15 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Added App BFF test fixtures for sensitive-field leak checks and capped future dashboard candidate rows.
   - Added regression coverage proving `/api/app/v1/dashboard` remains absent and disabled.
   - No dashboard route/controller/code, no legacy API changes, no AES.
+- 2026-05-20: Client request-waterfall audit completed.
+  - Audit artifact: `docs/app-api-dashboard-client-waterfall-audit.md`.
+  - Decision: do not implement `/api/app/v1/dashboard` yet.
+  - DK_Theme has a safer first migration target in `/api/app/v1/session`; hiddify-app still depends on raw subscription download.
 
 ### Current next task
 
-Recommended next planning prompt after collecting frontend request-waterfall evidence:
+Recommended next execution if optimizing without dashboard:
 
 ```text
-$ralplan "基于 DK_Theme 和 hiddify-app 的真实调用瀑布，决定是否启用 /api/app/v1/dashboard；先审批字段 allowlist、查询预算、payload 预算和 feature-flag/fallback 方案，不写代码。"
+$ralph "迁移前准备：为 /api/app/v1/session 增加可选兼容字段映射文档和客户端 fallback 方案；不改 DK_Theme/hiddify-app 代码，不实现 dashboard，不改旧 API，不做 AES。"
 ```
