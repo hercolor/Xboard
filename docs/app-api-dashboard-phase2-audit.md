@@ -263,3 +263,24 @@ Current decision:
 - Keep `bootstrap.capabilities.dashboard = false`.
 - Treat `/api/app/v1/session` as the current safe App BFF surface.
 - Revisit dashboard only after frontend/App migration evidence and field approval exist.
+
+## 13. Phase 2 follow-up preparation status
+
+Completed on 2026-05-20 for the read-model preparation slice:
+
+- Added `App\Services\App\AppSessionReadModel` as the allowlist-only read boundary for the existing `/api/app/v1/session` payload.
+- Updated `SessionController` to delegate read payload construction to the read model instead of keeping reusable field rules inside the controller.
+- Added App BFF test fixtures under `Tests\Support\AppApi\AppBffFixtures`:
+  - authenticated user fixture with sensitive legacy fields for leak checks;
+  - sensitive needle list shared by App BFF tests;
+  - capped future dashboard candidate rows for orders, tickets, and notices.
+- Added regression tests that keep `GET /api/app/v1/dashboard` absent and `bootstrap.capabilities.dashboard = false`.
+
+Still intentionally not done:
+
+- No `/api/app/v1/dashboard` route, controller, service, resource, or frontend migration.
+- No legacy `/api/v1/*` or `/api/v2/*` response changes.
+- No AES response wrapping.
+- No subscription, node/server, payment, Telegram, or plugin behavior changes.
+
+Next gate before dashboard implementation remains the prerequisite list in section 11: product consumer decision, field approval, measured frontend request waterfall, query-count harness, payload budget tests, and feature-flag/fallback plan.

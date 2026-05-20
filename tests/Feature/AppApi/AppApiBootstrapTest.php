@@ -6,9 +6,10 @@ namespace Tests\Feature\AppApi;
 
 use App\Http\Middleware\AppApiResponseBoundary;
 use App\Http\Middleware\InitializePlugins;
-use App\Models\User;
+use App\Services\App\AppSessionReadModel;
 use Illuminate\Routing\Route;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\AppApi\AppBffFixtures;
 use Tests\TestCase;
 
 final class AppApiBootstrapTest extends TestCase
@@ -68,6 +69,18 @@ final class AppApiBootstrapTest extends TestCase
         $this->assertNull($this->findRoute('GET', 'api/v1/app/v1/bootstrap'));
 
         $this->getJson('/api/v1/app/v1/bootstrap')->assertNotFound();
+    }
+
+    public function test_dashboard_remains_absent_until_phase_2_prerequisites_are_approved(): void
+    {
+        $this->assertNull($this->findRoute('GET', 'api/app/v1/dashboard'));
+
+        $this->getJson('/api/app/v1/dashboard')
+            ->assertNotFound()
+            ->assertJson([
+                'ok' => false,
+                'code' => 'NOT_FOUND',
+            ]);
     }
 
     public function test_app_api_not_found_errors_use_scoped_envelope(): void
@@ -137,26 +150,7 @@ final class AppApiBootstrapTest extends TestCase
 
     public function test_session_returns_read_only_user_subscription_and_traffic_overview_without_subscription_token(): void
     {
-        $user = new User();
-        $user->id = 42;
-        $user->email = 'app-session@example.invalid';
-        $user->token = 'secret-subscribe-token';
-        $user->uuid = '00000000-0000-0000-0000-000000000001';
-        $user->plan_id = 7;
-        $user->transfer_enable = 1000;
-        $user->u = 120;
-        $user->d = 80;
-        $user->expired_at = time() + 3600;
-        $user->banned = 0;
-        $user->is_admin = 0;
-        $user->is_staff = false;
-        $user->remind_expire = 1;
-        $user->remind_traffic = 0;
-        $user->device_limit = 3;
-        $user->speed_limit = 50;
-        $user->next_reset_at = time() + 86400;
-        $user->created_at = 1770000000;
-        $user->last_login_at = 1770000100;
+        $user = AppBffFixtures::user();
 
         Sanctum::actingAs($user);
 
@@ -206,9 +200,43 @@ final class AppApiBootstrapTest extends TestCase
             ]);
 
         $payload = json_encode($response->json('data'), JSON_THROW_ON_ERROR);
-        $this->assertStringNotContainsString('secret-subscribe-token', $payload);
-        $this->assertStringNotContainsString('subscribe_url', $payload);
-        $this->assertStringNotContainsString('00000000-0000-0000-0000-000000000001', $payload);
+        foreach (AppBffFixtures::sensitiveNeedles() as $needle) {
+            $this->assertStringNotContainsString($needle, $payload);
+        }
+    }
+
+    public function test_session_read_model_is_allowlist_only_and_safe_for_future_dashboard_reuse(): void
+    {
+        $payload = (new AppSessionReadModel())->forUser(AppBffFixtures::user());
+
+        $this->assertSame(['user', 'subscription', 'traffic', 'preferences'], array_keys($payload));
+        $this->assertSame(
+            ['id', 'email', 'avatar_url', 'is_admin', 'is_staff', 'banned', 'created_at', 'last_login_at', 'telegram_bound'],
+            array_keys($payload['user'])
+        );
+        $this->assertSame(
+            ['status', 'active', 'plan_id', 'expired_at', 'next_reset_at', 'device_limit', 'speed_limit', 'delivery_available'],
+            array_keys($payload['subscription'])
+        );
+
+        $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
+        foreach (AppBffFixtures::sensitiveNeedles() as $needle) {
+            $this->assertStringNotContainsString($needle, $encoded);
+        }
+    }
+
+    public function test_future_dashboard_fixture_catalog_is_capped_and_secret_free(): void
+    {
+        $fixture = AppBffFixtures::futureDashboardCandidateRows();
+
+        $this->assertLessThanOrEqual(5, count($fixture['orders_summary']['latest']));
+        $this->assertLessThanOrEqual(5, count($fixture['tickets_summary']['latest']));
+        $this->assertLessThanOrEqual(5, count($fixture['notices']));
+
+        $encoded = json_encode($fixture, JSON_THROW_ON_ERROR);
+        foreach (AppBffFixtures::sensitiveNeedles() as $needle) {
+            $this->assertStringNotContainsString($needle, $encoded);
+        }
     }
 
     private function findRoute(string $method, string $uri): ?Route

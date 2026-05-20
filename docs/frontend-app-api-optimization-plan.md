@@ -256,11 +256,16 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Audit artifact: `docs/app-api-dashboard-phase2-audit.md`.
   - Decision: dashboard aggregate remains absent/disabled until client migration evidence, field approval, query budget, and regression tests are ready.
   - No dashboard route/controller/code, no legacy API changes, no AES.
+- 2026-05-20: Phase 2 read-model preparation completed.
+  - Added `App\Services\App\AppSessionReadModel` as the allowlist-only read boundary for `/api/app/v1/session`.
+  - Added App BFF test fixtures for sensitive-field leak checks and capped future dashboard candidate rows.
+  - Added regression coverage proving `/api/app/v1/dashboard` remains absent and disabled.
+  - No dashboard route/controller/code, no legacy API changes, no AES.
 
 ### Current next task
 
-Recommended implementation prompt:
+Recommended next planning prompt after collecting frontend request-waterfall evidence:
 
 ```text
-$ralph "执行 docs/app-api-dashboard-phase2-audit.md 的 Phase 2 后续准备：设计只读 read-model/service 边界和测试夹具；仍不实现 /api/app/v1/dashboard，不改旧 API，不做 AES。"
+$ralplan "基于 DK_Theme 和 hiddify-app 的真实调用瀑布，决定是否启用 /api/app/v1/dashboard；先审批字段 allowlist、查询预算、payload 预算和 feature-flag/fallback 方案，不写代码。"
 ```
