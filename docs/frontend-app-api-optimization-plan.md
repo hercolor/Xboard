@@ -269,11 +269,14 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Planning artifact: `docs/app-api-session-migration-compatibility-plan.md`.
   - Decision: `/api/app/v1/session` can only replace non-secret auth/session summary fields; subscription delivery remains on legacy endpoints.
   - Fallback strategy: client opt-in flag first, legacy calls remain the rollback path.
+- 2026-05-20: Session and legacy fallback contract tests expanded.
+  - `tests/Feature/AppApi/AppApiBootstrapTest.php` now locks `/api/app/v1/session` allowlist behavior, legacy `user/info` and `getSubscribe` route boundaries, and documented fallback field fragments without requiring a DB driver.
+  - No new App session fields, no client changes, no dashboard, no AES.
 
 ### Current next task
 
-Recommended next backend-only execution:
+Recommended next planning step before client work:
 
 ```text
-$ralph "为 /api/app/v1/session 增加 contract fixture 文档对应测试：只断言现有字段、secret 不泄漏、legacy user/info 与 getSubscribe 不变；不新增字段，不改客户端，不实现 dashboard，不做 AES。"
+$ralplan "设计 DK_Theme VITE_ENABLE_APP_BFF 的 session adapter 和 fallback 测试方案；不改代码，先确定 UserInfo/SubscribeInfo 映射缺口。"
 ```

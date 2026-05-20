@@ -225,6 +225,52 @@ final class AppApiBootstrapTest extends TestCase
         }
     }
 
+    public function test_legacy_user_info_and_get_subscribe_routes_remain_outside_app_envelope(): void
+    {
+        foreach ([
+            ['GET', 'api/v1/user/info', 'info', 'throttle:user-read'],
+            ['GET', 'api/v1/user/getSubscribe', 'getSubscribe', null],
+        ] as [$method, $uri, $controllerMethod, $extraMiddleware]) {
+            $route = $this->findRoute($method, $uri);
+
+            $this->assertNotNull($route);
+            $this->assertSame(
+                'App\Http\Controllers\V1\User\UserController@' . $controllerMethod,
+                $route->getActionName()
+            );
+            $this->assertContains('user', $route->gatherMiddleware());
+            $this->assertNotContains(AppApiResponseBoundary::class, $route->gatherMiddleware());
+
+            if ($extraMiddleware !== null) {
+                $this->assertContains($extraMiddleware, $route->gatherMiddleware());
+            }
+        }
+    }
+
+    public function test_legacy_user_controller_source_keeps_frontend_fallback_fields_documented_for_session_migration(): void
+    {
+        $source = file_get_contents(app_path('Http/Controllers/V1/User/UserController.php'));
+
+        $this->assertIsString($source);
+
+        foreach ([
+            "'balance'",
+            "'commission_balance'",
+            "'uuid'",
+            '$user[\'avatar_url\']',
+            "'token'",
+            "'u'",
+            "'d'",
+            "'device_limit'",
+            "'speed_limit'",
+            "'next_reset_at'",
+            '$user[\'subscribe_url\'] = Helper::getSubscribeUrl($user[\'token\']);',
+            'HookManager::filter(\'user.subscribe.response\', $user)',
+        ] as $expectedContractFragment) {
+            $this->assertStringContainsString($expectedContractFragment, $source);
+        }
+    }
+
     public function test_future_dashboard_fixture_catalog_is_capped_and_secret_free(): void
     {
         $fixture = AppBffFixtures::futureDashboardCandidateRows();

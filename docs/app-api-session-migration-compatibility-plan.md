@@ -213,16 +213,26 @@ Before changing DK_Theme or hiddify-app, add/keep backend tests that prove:
 - `/api/v1/client/subscribe?token=...` and `/s/{token}` stay outside the App envelope.
 - Any optional field extension has explicit allowlist assertions and does not increase query count beyond the App read budget.
 
-## 9. Next recommended task
+## 9. Backend contract test status
 
-If proceeding with backend-only preparation:
+Completed on 2026-05-20:
 
-```text
-$ralph "为 /api/app/v1/session 增加 contract fixture 文档对应测试：只断言现有字段、secret 不泄漏、legacy user/info 与 getSubscribe 不变；不新增字段，不改客户端，不实现 dashboard，不做 AES。"
+- App session route and read-model tests assert the current allowlist sections and secret leak blockers.
+- Legacy `GET /api/v1/user/info` and `GET /api/v1/user/getSubscribe` remain mounted outside the App envelope for client fallback.
+- Legacy controller source fragments for DK_Theme fallback fields and subscription delivery fields are pinned without requiring a DB driver in this local test environment.
+
+Verification command:
+
+```bash
+./vendor/bin/phpunit tests/Feature/AppApi tests/Feature/AdminOnlyShellContractTest.php tests/Feature/ApiSecurityPilotTest.php
 ```
+
+## 10. Next recommended task
 
 If proceeding with DK_Theme migration planning:
 
 ```text
 $ralplan "设计 DK_Theme VITE_ENABLE_APP_BFF 的 session adapter 和 fallback 测试方案；不改代码，先确定 UserInfo/SubscribeInfo 映射缺口。"
 ```
+
+If proceeding with backend implementation later, first approve any optional session fields from section 7; otherwise keep `/api/app/v1/session` unchanged.
