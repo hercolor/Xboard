@@ -265,6 +265,11 @@ code="$(get_auth "$BASE_URL/api/v1/user/info" "$member_auth")"
 assert_code 200 "$code" "V1 user/info"
 assert_json_path /tmp/e2e-body.$$ status success "V1 user/info JSON status"
 
+code="$(get_auth "$BASE_URL/api/app/v1/session" "$member_auth")"
+assert_code 200 "$code" "App API session"
+assert_json_path /tmp/e2e-body.$$ ok true "App API session ok"
+assert_json_path /tmp/e2e-body.$$ data.subscription.delivery_available true "App API session subscription delivery flag"
+
 code="$(get_auth "$BASE_URL/api/v2/user/info" "$member_auth")"
 assert_code 200 "$code" "V2 user/info"
 assert_json_path /tmp/e2e-body.$$ status success "V2 user/info JSON status"

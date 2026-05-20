@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\AppApi;
 
-use App\Http\Middleware\InitializePlugins;
 use App\Http\Middleware\AppApiResponseBoundary;
+use App\Http\Middleware\InitializePlugins;
+use App\Models\User;
 use Illuminate\Routing\Route;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 final class AppApiBootstrapTest extends TestCase
@@ -38,7 +40,7 @@ final class AppApiBootstrapTest extends TestCase
                     ],
                     'capabilities' => [
                         'bootstrap' => true,
-                        'session' => false,
+                        'session' => true,
                         'dashboard' => false,
                     ],
                 ],
@@ -91,6 +93,11 @@ final class AppApiBootstrapTest extends TestCase
         $this->assertNotNull($appRoute);
         $this->assertContains(AppApiResponseBoundary::class, $appRoute->gatherMiddleware());
 
+        $sessionRoute = $this->findRoute('GET', 'api/app/v1/session');
+        $this->assertNotNull($sessionRoute);
+        $this->assertContains(AppApiResponseBoundary::class, $sessionRoute->gatherMiddleware());
+        $this->assertContains('user', $sessionRoute->gatherMiddleware());
+
         foreach ([
             ['GET', 'api/v1/client/subscribe'],
             ['GET', 'api/v2/server/config'],
@@ -109,6 +116,99 @@ final class AppApiBootstrapTest extends TestCase
                 sprintf('Expected no-touch route [%s %s] to stay outside the App API envelope.', $method, $uri)
             );
         }
+    }
+
+    public function test_session_requires_user_auth_and_uses_app_api_error_envelope(): void
+    {
+        $this->getJson('/api/app/v1/session')
+            ->assertStatus(403)
+            ->assertJson([
+                'ok' => false,
+                'code' => 'APP_API_ERROR',
+            ])
+            ->assertJsonStructure([
+                'ok',
+                'code',
+                'message',
+                'data',
+                'meta' => ['trace_id', 'server_time'],
+            ]);
+    }
+
+    public function test_session_returns_read_only_user_subscription_and_traffic_overview_without_subscription_token(): void
+    {
+        $user = new User();
+        $user->id = 42;
+        $user->email = 'app-session@example.invalid';
+        $user->token = 'secret-subscribe-token';
+        $user->uuid = '00000000-0000-0000-0000-000000000001';
+        $user->plan_id = 7;
+        $user->transfer_enable = 1000;
+        $user->u = 120;
+        $user->d = 80;
+        $user->expired_at = time() + 3600;
+        $user->banned = 0;
+        $user->is_admin = 0;
+        $user->is_staff = false;
+        $user->remind_expire = 1;
+        $user->remind_traffic = 0;
+        $user->device_limit = 3;
+        $user->speed_limit = 50;
+        $user->next_reset_at = time() + 86400;
+        $user->created_at = 1770000000;
+        $user->last_login_at = 1770000100;
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/app/v1/session');
+
+        $response->assertOk()
+            ->assertJson([
+                'ok' => true,
+                'code' => 'OK',
+                'data' => [
+                    'user' => [
+                        'id' => 42,
+                        'email' => 'app-session@example.invalid',
+                        'banned' => false,
+                    ],
+                    'subscription' => [
+                        'status' => 'active',
+                        'active' => true,
+                        'plan_id' => 7,
+                        'delivery_available' => true,
+                    ],
+                    'traffic' => [
+                        'upload' => 120,
+                        'download' => 80,
+                        'used' => 200,
+                        'total' => 1000,
+                        'remaining' => 800,
+                        'usage_percent' => 20.0,
+                    ],
+                    'preferences' => [
+                        'remind_expire' => true,
+                        'remind_traffic' => false,
+                    ],
+                ],
+            ])
+            ->assertJsonStructure([
+                'ok',
+                'code',
+                'message',
+                'data' => [
+                    'user' => ['id', 'email', 'avatar_url', 'is_admin', 'is_staff', 'banned', 'created_at', 'last_login_at', 'telegram_bound'],
+                    'subscription' => ['status', 'active', 'plan_id', 'expired_at', 'next_reset_at', 'device_limit', 'speed_limit', 'delivery_available'],
+                    'traffic' => ['upload', 'download', 'used', 'total', 'remaining', 'usage_percent'],
+                    'preferences' => ['remind_expire', 'remind_traffic'],
+                ],
+                'meta' => ['trace_id', 'server_time'],
+            ]);
+
+        $payload = json_encode($response->json('data'), JSON_THROW_ON_ERROR);
+        $this->assertStringNotContainsString('secret-subscribe-token', $payload);
+        $this->assertStringNotContainsString('subscribe_url', $payload);
+        $this->assertStringNotContainsString('00000000-0000-0000-0000-000000000001', $payload);
     }
 
     private function findRoute(string $method, string $uri): ?Route

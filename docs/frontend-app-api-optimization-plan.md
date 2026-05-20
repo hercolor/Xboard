@@ -181,6 +181,8 @@ Deliverables:
 - Add `/api/app/v1/session` only after bootstrap boundary is stable.
 - Auth errors under `/api/app/v1/*` return the new envelope.
 - Legacy `/api/v1/*` error shape remains unchanged.
+- Session payload is read-only and limited to user basics, subscription status/limits, traffic overview, and reminder preferences.
+- Session payload must not expose subscription token, `subscribe_url`, user UUID, node credentials, or raw auth data.
 
 ### Phase 2 — Optional read-only dashboard BFF
 
@@ -231,10 +233,26 @@ flutter analyze
 
 Do not modify hiddify-app during the first backend BFF skeleton slice.
 
-## 10. Current next task
+## 10. Implementation status
+
+### Completed
+
+- 2026-05-20: First execution slice completed in commit `1938ca4`.
+  - Added independent `/api/app/v1` mount.
+  - Added unauthenticated `GET /api/app/v1/bootstrap`.
+  - Added App API response factory and scoped error envelope.
+  - Added route/no-touch tests and E2E smoke coverage.
+- 2026-05-20: Phase 1 session endpoint completed in the current Ralph session.
+  - Added authenticated `GET /api/app/v1/session`.
+  - Uses existing `user` middleware.
+  - Returns read-only user/subscription/traffic/preference overview.
+  - Does not expose subscription token, `subscribe_url`, user UUID, or raw auth data.
+  - Keeps legacy `/api/v1/user/info` and `/api/v1/user/getSubscribe` unchanged.
+
+### Current next task
 
 Recommended implementation prompt:
 
 ```text
-$ralph "执行 docs/frontend-app-api-optimization-plan.md 的 First execution slice：只做 Phase 0 + /api/app/v1/bootstrap skeleton，不做 dashboard 聚合，不改旧 API，不做 AES。"
+$ralph "执行 docs/frontend-app-api-optimization-plan.md 的 Phase 2 规划前审计：只评估 /api/app/v1/dashboard 是否需要、字段边界、查询预算和回归测试；先不写 dashboard 代码，不改旧 API，不做 AES。"
 ```

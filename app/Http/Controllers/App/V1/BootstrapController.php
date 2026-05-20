@@ -19,7 +19,7 @@ final class BootstrapController extends Controller
             ],
             'capabilities' => [
                 'bootstrap' => true,
-                'session' => false,
+                'session' => true,
                 'dashboard' => false,
             ],
         ]);
