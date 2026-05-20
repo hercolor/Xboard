@@ -186,9 +186,13 @@ Deliverables:
 
 ### Phase 2 — Optional read-only dashboard BFF
 
-- Add `GET /api/app/v1/dashboard` as a read-only aggregate.
-- Internal implementation must use services/read models, not response reuse from legacy controllers.
-- Define query count, latency, and payload budgets before optimizing.
+Planning/audit status: see `docs/app-api-dashboard-phase2-audit.md`.
+
+- Current decision: do **not** implement `GET /api/app/v1/dashboard` yet.
+- Keep `GET /api/app/v1/bootstrap` reporting `data.capabilities.dashboard = false`.
+- Treat `GET /api/app/v1/session` as the current safe App BFF user-center surface.
+- Future implementation, if approved, must be a read-only aggregate using services/read models, not response reuse from legacy controllers.
+- Field allowlist, sensitive-field denylist, query count, latency, payload budgets, and regression tests must be approved before code is added.
 
 ### Phase 3 — Optional client migration
 
@@ -248,11 +252,15 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Returns read-only user/subscription/traffic/preference overview.
   - Does not expose subscription token, `subscribe_url`, user UUID, or raw auth data.
   - Keeps legacy `/api/v1/user/info` and `/api/v1/user/getSubscribe` unchanged.
+- 2026-05-20: Phase 2 dashboard pre-implementation audit completed.
+  - Audit artifact: `docs/app-api-dashboard-phase2-audit.md`.
+  - Decision: dashboard aggregate remains absent/disabled until client migration evidence, field approval, query budget, and regression tests are ready.
+  - No dashboard route/controller/code, no legacy API changes, no AES.
 
 ### Current next task
 
 Recommended implementation prompt:
 
 ```text
-$ralph "执行 docs/frontend-app-api-optimization-plan.md 的 Phase 2 规划前审计：只评估 /api/app/v1/dashboard 是否需要、字段边界、查询预算和回归测试；先不写 dashboard 代码，不改旧 API，不做 AES。"
+$ralph "执行 docs/app-api-dashboard-phase2-audit.md 的 Phase 2 后续准备：设计只读 read-model/service 边界和测试夹具；仍不实现 /api/app/v1/dashboard，不改旧 API，不做 AES。"
 ```
