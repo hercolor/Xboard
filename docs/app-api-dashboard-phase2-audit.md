@@ -296,3 +296,14 @@ See `docs/app-api-dashboard-client-waterfall-audit.md`. The implementation is no
 ## 15. Session-first migration gate
 
 See `docs/app-api-session-migration-compatibility-plan.md`. The approved migration-prep direction is session-first, not dashboard-first: `/api/app/v1/session` may serve non-secret DK_Theme auth/session summary fields behind a client opt-in flag, while subscription delivery (`subscribe_url`, `token`, raw subscription download) remains on legacy endpoints. Any optional session field extension such as balances or plan name requires explicit approval, allowlist tests, and query-budget checks.
+
+## 16. E2E smoke coverage update
+
+Completed on 2026-05-21 for deployment smoke preparation:
+
+- Extended `scripts/e2e-smoke.sh` to cover unauthenticated `GET /api/app/v1/dashboard` and assert the App API error envelope plus trace propagation.
+- Extended the authenticated member smoke path to call `GET /api/app/v1/dashboard` after `/api/app/v1/session`.
+- Added smoke assertions that the dashboard response uses the App API success envelope and exposes `subscription_summary.delivery_available` without replacing subscription delivery endpoints.
+- Added a script-level sensitive string guard for `subscribe_url`, `auth_data`, `uuid`, and `token` in the dashboard response body.
+
+This is deployment/runtime smoke coverage only. The canonical field-level assertions remain in `tests/Feature/AppApi/AppApiDashboardTest.php`.

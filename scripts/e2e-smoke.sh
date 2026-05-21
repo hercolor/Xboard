@@ -242,6 +242,12 @@ assert_json_path /tmp/e2e-body.$$ ok true "App API bootstrap ok"
 assert_json_path /tmp/e2e-body.$$ code OK "App API bootstrap code"
 assert_json_path /tmp/e2e-body.$$ meta.trace_id e2e-app-api-bootstrap "App API bootstrap trace"
 
+code="$(http_code -H 'X-Request-Id: e2e-app-api-dashboard-guest' "$BASE_URL/api/app/v1/dashboard")"
+assert_code 403 "$code" "App API dashboard requires auth"
+assert_json_path /tmp/e2e-body.$$ ok false "App API dashboard guest ok flag"
+assert_json_path /tmp/e2e-body.$$ code APP_API_ERROR "App API dashboard guest error code"
+assert_json_path /tmp/e2e-body.$$ meta.trace_id e2e-app-api-dashboard-guest "App API dashboard guest trace"
+
 code="$(post_json "$BASE_URL/api/v2/$secure/auth/login" "{\"email\":\"$admin_email\",\"password\":\"$password\"}")"
 assert_code 200 "$code" "admin auth/login"
 assert_json_path /tmp/e2e-body.$$ status success "admin auth/login JSON status"
@@ -269,6 +275,18 @@ code="$(get_auth "$BASE_URL/api/app/v1/session" "$member_auth")"
 assert_code 200 "$code" "App API session"
 assert_json_path /tmp/e2e-body.$$ ok true "App API session ok"
 assert_json_path /tmp/e2e-body.$$ data.subscription.delivery_available true "App API session subscription delivery flag"
+
+code="$(get_auth "$BASE_URL/api/app/v1/dashboard" "$member_auth")"
+assert_code 200 "$code" "App API dashboard"
+assert_json_path /tmp/e2e-body.$$ ok true "App API dashboard ok"
+assert_json_path /tmp/e2e-body.$$ data.subscription_summary.delivery_available true "App API dashboard subscription delivery flag"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "App API dashboard leaked sensitive delivery fields"
+import json, sys
+encoded = json.dumps(json.load(open(sys.argv[1])), ensure_ascii=False)
+for needle in ('subscribe_url', 'auth_data', 'uuid', 'token'):
+    if needle in encoded:
+        raise SystemExit(needle)
+PY
 
 code="$(get_auth "$BASE_URL/api/v2/user/info" "$member_auth")"
 assert_code 200 "$code" "V2 user/info"
