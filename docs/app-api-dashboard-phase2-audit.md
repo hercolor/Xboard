@@ -1,23 +1,22 @@
 # App API Dashboard Phase 2 Pre-Implementation Audit
 
-> Date: 2026-05-20  
-> Scope: planning/audit only for a possible `GET /api/app/v1/dashboard`.  
-> Decision: do not implement dashboard in this phase. Keep `/api/app/v1/bootstrap` and `/api/app/v1/session` as the only App BFF routes until field boundaries and frontend migration evidence are approved.
+> Date: 2026-05-20
+> Scope: Phase 2 audit and implementation record for `GET /api/app/v1/dashboard`.
+> Decision update: `GET /api/app/v1/dashboard` is implemented as an additive, authenticated, read-only App BFF aggregate. Legacy APIs, subscription delivery, node/server APIs, callbacks, plugins, DK_Theme, and hiddify-app remain unchanged.
 
 ## 1. Scope and non-goals
 
-This audit prepares Phase 2 of `docs/frontend-app-api-optimization-plan.md`.
+This audit originally prepared Phase 2 of `docs/frontend-app-api-optimization-plan.md`; it now also records the approved implementation boundary.
 
 In scope:
 
-- Decide whether `/api/app/v1/dashboard` is needed now.
+- Record the approved `/api/app/v1/dashboard` implementation boundary.
 - Define the future endpoint's read-only field boundary.
 - Define query, latency, and payload budgets before implementation.
 - Define regression tests required before enabling the route.
 
-Out of scope for this audit:
+Out of scope for this phase:
 
-- No dashboard route, controller, service, request, resource, or frontend code.
 - No legacy `/api/v1/*` or `/api/v2/*` response shape changes.
 - No AES response wrapping.
 - No DK_Theme or hiddify-app migration.
@@ -31,9 +30,9 @@ Current mounted App BFF routes are intentionally small:
 | --- | --- | --- | --- |
 | `GET /api/app/v1/bootstrap` | no | BFF capability discovery and stable envelope proof | implemented |
 | `GET /api/app/v1/session` | `user` middleware | authenticated user/subscription/traffic summary | implemented |
-| `GET /api/app/v1/dashboard` | n/a | possible future aggregate | **not implemented** |
+| `GET /api/app/v1/dashboard` | `user` middleware | authenticated read-only user dashboard summary | implemented |
 
-`BootstrapController` currently exposes `data.capabilities.dashboard = false`, which is the correct public signal for this audit phase.
+`BootstrapController` now exposes `data.capabilities.dashboard = true` for clients that explicitly opt in to the App BFF.
 
 ## 3. Is `/api/app/v1/dashboard` needed now?
 
@@ -222,14 +221,9 @@ Response shape should remain under the App BFF envelope:
 
 Versioning rule: add fields additively only. Removing or renaming fields requires a new App BFF version or a feature flag/migration window.
 
-## 10. Regression test plan for future implementation
+## 10. Regression test plan
 
-Before adding `/api/app/v1/dashboard`, tests should first assert the current absence/capability state:
-
-- `/api/app/v1/bootstrap` returns `data.capabilities.dashboard = false`.
-- `GET /api/app/v1/dashboard` is not mounted until the implementation task begins.
-
-When a future implementation task starts, required tests:
+The earlier absence/capability tests were retired when the implementation was approved. Current required tests:
 
 1. **Auth boundary**: unauthenticated dashboard returns App API error envelope and does not call legacy response helpers.
 2. **Envelope shape**: authenticated success returns `ok/code/message/data/meta` with stable `meta.trace_id` and integer `server_time`.
@@ -255,14 +249,15 @@ Do not implement the dashboard endpoint until these prerequisites are complete:
 
 ## 12. Decision
 
-Phase 2 remains a **planning gate**, not an implementation gate.
+Phase 2 has moved from planning gate to a narrow implementation checkpoint.
 
 Current decision:
 
-- Keep `/api/app/v1/dashboard` disabled and absent.
-- Keep `bootstrap.capabilities.dashboard = false`.
-- Treat `/api/app/v1/session` as the current safe App BFF surface.
-- Revisit dashboard only after frontend/App migration evidence and field approval exist.
+- Mount authenticated `GET /api/app/v1/dashboard`.
+- Keep `bootstrap.capabilities.dashboard = true`.
+- Use `App\Services\App\AppDashboardReadModel`, not legacy controller responses.
+- Keep the response allowlist-only and capped: session/subscription/traffic summaries, latest orders, latest tickets, public notice titles, and empty support object.
+- Continue to treat `/api/app/v1/session` as the safer first migration surface for DK_Theme session metadata.
 
 ## 13. Phase 2 follow-up preparation status
 
@@ -274,21 +269,29 @@ Completed on 2026-05-20 for the read-model preparation slice:
   - authenticated user fixture with sensitive legacy fields for leak checks;
   - sensitive needle list shared by App BFF tests;
   - capped future dashboard candidate rows for orders, tickets, and notices.
-- Added regression tests that keep `GET /api/app/v1/dashboard` absent and `bootstrap.capabilities.dashboard = false`.
+- Added then-current regression tests that kept `GET /api/app/v1/dashboard` absent and `bootstrap.capabilities.dashboard = false`; those assertions were superseded by the 2026-05-21 implementation slice.
+
+Completed on 2026-05-21 for the dashboard implementation slice:
+
+- Added `App\Services\App\AppDashboardReadModel` as a read-only aggregate boundary.
+- Added `App\Http\Controllers\App\V1\DashboardController`.
+- Mounted authenticated `GET /api/app/v1/dashboard` under the existing App API envelope and `throttle:app-read`.
+- Updated bootstrap capability discovery to report `dashboard = true`.
+- Added feature tests for auth envelope, allowlist shape, sensitive-field absence, list caps, and query budget.
 
 Still intentionally not done:
 
-- No `/api/app/v1/dashboard` route, controller, service, resource, or frontend migration.
 - No legacy `/api/v1/*` or `/api/v2/*` response changes.
 - No AES response wrapping.
+- No DK_Theme or hiddify-app migration.
 - No subscription, node/server, payment, Telegram, or plugin behavior changes.
 
-Next gate before dashboard implementation remains the prerequisite list in section 11: product consumer decision, field approval, measured frontend request waterfall, query-count harness, payload budget tests, and feature-flag/fallback plan.
+Next gate before client migration remains: DK_Theme/hiddify-app opt-in flag work, fallback testing, browser/app smoke evidence, and production latency observation.
 
 
 ## 14. Client waterfall evidence
 
-See `docs/app-api-dashboard-client-waterfall-audit.md`. Current conclusion remains: do not implement `/api/app/v1/dashboard` yet. DK_Theme should first evaluate `/api/app/v1/session` migration/fallback for the non-secret auth/session subset; hiddify-app still requires login, subscription metadata, and raw subscription content, so dashboard would not remove its critical-path dependency.
+See `docs/app-api-dashboard-client-waterfall-audit.md`. The implementation is now available as an additive App BFF route, but the client migration conclusion remains conservative: DK_Theme should keep its session adapter fallback, and hiddify-app still requires login, subscription metadata, and raw subscription content.
 
 ## 15. Session-first migration gate
 

@@ -58,6 +58,8 @@ final class ApiSecurityPilotTest extends TestCase
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/bootstrap', 'throttle:app-read');
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/session', 'user');
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/session', 'throttle:app-read');
+        $this->assertRouteContainsMiddleware('GET', 'api/app/v1/dashboard', 'user');
+        $this->assertRouteContainsMiddleware('GET', 'api/app/v1/dashboard', 'throttle:app-read');
 
         foreach ([
             ['GET', 'api/v1/client/subscribe'],

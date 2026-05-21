@@ -18,6 +18,8 @@ final class AppApiBootstrapTest extends TestCase
     {
         parent::setUp();
 
+        config(['api_security.rate_limits.enabled' => false]);
+
         // These endpoint tests assert the App API route/envelope contract.
         // Plugin boot is covered by the runtime E2E smoke path and may require
         // the local php-xboard binary's sqlite extension in this workspace.
@@ -42,7 +44,7 @@ final class AppApiBootstrapTest extends TestCase
                     'capabilities' => [
                         'bootstrap' => true,
                         'session' => true,
-                        'dashboard' => false,
+                        'dashboard' => true,
                     ],
                 ],
                 'meta' => [
@@ -71,16 +73,14 @@ final class AppApiBootstrapTest extends TestCase
         $this->getJson('/api/v1/app/v1/bootstrap')->assertNotFound();
     }
 
-    public function test_dashboard_remains_absent_until_phase_2_prerequisites_are_approved(): void
+    public function test_dashboard_is_mounted_after_phase_2_approval(): void
     {
-        $this->assertNull($this->findRoute('GET', 'api/app/v1/dashboard'));
+        $route = $this->findRoute('GET', 'api/app/v1/dashboard');
 
-        $this->getJson('/api/app/v1/dashboard')
-            ->assertNotFound()
-            ->assertJson([
-                'ok' => false,
-                'code' => 'NOT_FOUND',
-            ]);
+        $this->assertNotNull($route);
+        $this->assertContains(AppApiResponseBoundary::class, $route->gatherMiddleware());
+        $this->assertContains('user', $route->gatherMiddleware());
+        $this->assertContains('throttle:app-read', $route->gatherMiddleware());
     }
 
     public function test_app_api_not_found_errors_use_scoped_envelope(): void

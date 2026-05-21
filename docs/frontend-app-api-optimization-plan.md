@@ -1,7 +1,7 @@
 # Frontend Web/App API Optimization Plan
 
-> Date: 2026-05-20  
-> Scope: Xboard backend API support for separated Web frontend (`DK_Theme`) and App client (`hiddify-app`).  
+> Date: 2026-05-20
+> Scope: Xboard backend API support for separated Web frontend (`DK_Theme`) and App client (`hiddify-app`).
 > Rule: compatibility-first. Do not delete, soft-disable, encrypt, or reshape existing shared APIs in this phase.
 
 ## 1. Hard boundaries
@@ -29,7 +29,7 @@ Explicitly not in this phase:
 
 - No AES wrapping of all API responses.
 - No deletion of legacy Passport/User/Guest APIs.
-- No dashboard aggregation until the new route/response boundary is proven.
+- No legacy dashboard reshaping; App BFF dashboard aggregation must stay additive, authenticated, read-only, and fallback-safe.
 - No DK_Theme or hiddify-app migration until fallback and contract tests exist.
 
 ## 2. Current client sources
@@ -188,11 +188,11 @@ Deliverables:
 
 Planning/audit status: see `docs/app-api-dashboard-phase2-audit.md`.
 
-- Current decision: do **not** implement `GET /api/app/v1/dashboard` yet.
-- Keep `GET /api/app/v1/bootstrap` reporting `data.capabilities.dashboard = false`.
-- Treat `GET /api/app/v1/session` as the current safe App BFF user-center surface.
-- Future implementation, if approved, must be a read-only aggregate using services/read models, not response reuse from legacy controllers.
-- Field allowlist, sensitive-field denylist, query count, latency, payload budgets, and regression tests must be approved before code is added.
+- Current decision: `GET /api/app/v1/dashboard` is implemented as an additive authenticated read-only aggregate.
+- Keep `GET /api/app/v1/bootstrap` reporting `data.capabilities.dashboard = true`.
+- Treat `GET /api/app/v1/session` as the safest first migration surface; dashboard remains opt-in/fallback-only for clients.
+- Dashboard uses services/read models, not response reuse from legacy controllers.
+- Field allowlist, sensitive-field denylist, list caps, and query budget are covered by App API feature tests.
 
 ### Phase 3 — Optional client migration
 
@@ -254,16 +254,16 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Keeps legacy `/api/v1/user/info` and `/api/v1/user/getSubscribe` unchanged.
 - 2026-05-20: Phase 2 dashboard pre-implementation audit completed.
   - Audit artifact: `docs/app-api-dashboard-phase2-audit.md`.
-  - Decision: dashboard aggregate remains absent/disabled until client migration evidence, field approval, query budget, and regression tests are ready.
-  - No dashboard route/controller/code, no legacy API changes, no AES.
+  - Historical decision at that time: dashboard aggregate remained absent/disabled until client migration evidence, field approval, query budget, and regression tests were ready.
+  - Superseded by the 2026-05-21 additive implementation checkpoint below.
 - 2026-05-20: Phase 2 read-model preparation completed.
   - Added `App\Services\App\AppSessionReadModel` as the allowlist-only read boundary for `/api/app/v1/session`.
   - Added App BFF test fixtures for sensitive-field leak checks and capped future dashboard candidate rows.
-  - Added regression coverage proving `/api/app/v1/dashboard` remains absent and disabled.
-  - No dashboard route/controller/code, no legacy API changes, no AES.
+  - Added then-current regression coverage proving `/api/app/v1/dashboard` remained absent and disabled.
+  - Superseded by the 2026-05-21 additive implementation checkpoint below.
 - 2026-05-20: Client request-waterfall audit completed.
   - Audit artifact: `docs/app-api-dashboard-client-waterfall-audit.md`.
-  - Decision: do not implement `/api/app/v1/dashboard` yet.
+  - Historical decision at that time: do not implement `/api/app/v1/dashboard` yet.
   - DK_Theme has a safer first migration target in `/api/app/v1/session`; hiddify-app still depends on raw subscription download.
 - 2026-05-20: Session migration compatibility plan completed.
   - Planning artifact: `docs/app-api-session-migration-compatibility-plan.md`.
@@ -272,6 +272,12 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 - 2026-05-20: Session and legacy fallback contract tests expanded.
   - `tests/Feature/AppApi/AppApiBootstrapTest.php` now locks `/api/app/v1/session` allowlist behavior, legacy `user/info` and `getSubscribe` route boundaries, and documented fallback field fragments without requiring a DB driver.
   - No new App session fields, no client changes, no dashboard, no AES.
+- 2026-05-21: Phase 2 dashboard implementation completed as an additive App BFF route.
+  - Added `GET /api/app/v1/dashboard` with `user` + `throttle:app-read` middleware.
+  - Added `App\Services\App\AppDashboardReadModel` and `DashboardController`.
+  - Response is allowlist-only: session/subscription/traffic summaries, capped latest orders/tickets/notices, and no subscription token/URL, auth data, UUID, node credentials, payment details, ticket messages, or knowledge bodies.
+  - Updated bootstrap capability to `dashboard = true`.
+  - Legacy APIs, subscription delivery, node/server APIs, payment, Telegram, plugin hooks, DK_Theme, hiddify-app, and AES remain unchanged.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
