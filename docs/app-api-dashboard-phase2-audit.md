@@ -307,3 +307,45 @@ Completed on 2026-05-21 for deployment smoke preparation:
 - Added a script-level sensitive string guard for `subscribe_url`, `auth_data`, `uuid`, and `token` in the dashboard response body.
 
 This is deployment/runtime smoke coverage only. The canonical field-level assertions remain in `tests/Feature/AppApi/AppApiDashboardTest.php`.
+
+## 17. Local runtime E2E evidence
+
+Completed by local runtime smoke on 2026-05-21 after Redis and Laravel were started with `./scripts/dev-up.sh`.
+
+Runtime:
+
+```text
+URL:   http://127.0.0.1:8001/12345678
+Redis: 127.0.0.1:6379
+```
+
+Smoke command intent:
+
+```bash
+BASE_URL=http://127.0.0.1:8001 ./scripts/e2e-smoke.sh
+```
+
+Observed result:
+
+```text
+[e2e-smoke] OK: App API bootstrap -> HTTP 200
+[e2e-smoke] OK: App API dashboard requires auth -> HTTP 403
+[e2e-smoke] OK: App API session -> HTTP 200
+[e2e-smoke] OK: App API dashboard -> HTTP 200
+[e2e-smoke] OK: V1 user/info -> HTTP 200
+[e2e-smoke] OK: V2 user/info -> HTTP 200
+[e2e-smoke] OK: subscribe /s/{token} -> HTTP 200 with ss:// payload
+[e2e-smoke] OK: telegram webhook empty update -> HTTP 200
+[e2e-smoke] OK: payment notify route reached controller boundary -> HTTP 500 (expected failure without provider fixture)
+[e2e-smoke] E2E smoke passed
+```
+
+Coverage confirmed:
+
+- Public `/` remains 404 and does not redirect to the admin shell.
+- Configured admin shell path remains reachable.
+- App BFF bootstrap/session/dashboard routes work through the live Laravel runtime.
+- Dashboard auth boundary returns the App API error envelope when unauthenticated.
+- Legacy V1/V2 user APIs remain reachable.
+- Subscription delivery remains on `/s/{token}` and still returns the expected `ss://` payload for the seeded smoke node.
+- Telegram and payment controller boundaries remain reachable and outside the App BFF envelope.
