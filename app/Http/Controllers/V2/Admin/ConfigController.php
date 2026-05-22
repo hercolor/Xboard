@@ -117,6 +117,10 @@ class ConfigController extends Controller
                 'currency' => admin_setting('currency', 'CNY'),
                 'currency_symbol' => admin_setting('currency_symbol', '¥'),
                 'ticket_must_wait_reply' => (bool) admin_setting('ticket_must_wait_reply', 0),
+                'support_contact_label' => admin_setting('support_contact_label'),
+                'support_contact_url' => admin_setting('support_contact_url'),
+                'support_group_label' => admin_setting('support_group_label'),
+                'support_group_url' => admin_setting('support_group_url', admin_setting('telegram_discuss_link')),
             ],
             'subscribe' => [
                 'plan_change_enable' => (bool) admin_setting('plan_change_enable', 1),

@@ -28,6 +28,10 @@ class CommController extends Controller
             'app_description' => admin_setting('app_description'),
             'app_url' => admin_setting('app_url'),
             'logo' => admin_setting('logo'),
+            'support_contact_label' => admin_setting('support_contact_label'),
+            'support_contact_url' => admin_setting('support_contact_url'),
+            'support_group_label' => admin_setting('support_group_label'),
+            'support_group_url' => admin_setting('support_group_url', admin_setting('telegram_discuss_link')),
             // 保持向后兼容
             'is_recaptcha' => (int) admin_setting('captcha_enable', 0) ? 1 : 0,
         ];
