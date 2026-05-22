@@ -65,6 +65,9 @@ final class AdminOnlyShellContractTest extends TestCase
                 'support_contact_url' => 'https://support.example.invalid/contact',
                 'support_group_label' => 'Group',
                 'support_group_url' => 'https://support.example.invalid/group',
+                'windows_download_url' => 'https://download.example.invalid/windows.exe',
+                'macos_download_url' => 'https://download.example.invalid/macos.dmg',
+                'android_download_url' => 'https://download.example.invalid/android.apk',
             ];
 
             public function __construct()
@@ -85,6 +88,9 @@ final class AdminOnlyShellContractTest extends TestCase
         $this->assertSame('https://support.example.invalid/contact', $payload['data']['customer_service']);
         $this->assertSame('https://support.example.invalid/contact', $payload['data']['customer_service_url']);
         $this->assertSame('https://support.example.invalid/contact', $payload['data']['customerServiceUrl']);
+        $this->assertSame('https://download.example.invalid/windows.exe', $payload['data']['windows_download_url']);
+        $this->assertSame('https://download.example.invalid/macos.dmg', $payload['data']['macos_download_url']);
+        $this->assertSame('https://download.example.invalid/android.apk', $payload['data']['android_download_url']);
     }
 
     /**

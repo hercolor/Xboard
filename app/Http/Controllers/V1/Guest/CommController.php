@@ -35,6 +35,9 @@ class CommController extends Controller
             'support_contact_url' => $supportContactUrl,
             'support_group_label' => admin_setting('support_group_label'),
             'support_group_url' => $supportGroupUrl,
+            'windows_download_url' => admin_setting('windows_download_url'),
+            'macos_download_url' => admin_setting('macos_download_url'),
+            'android_download_url' => admin_setting('android_download_url'),
             // APP 兼容字段：hiddify-app 当前从 customer_service* 读取客服入口。
             // 保留 support_* 字段给 DK_Theme/旧前端，同时补充别名避免前端分叉。
             'customer_service' => $supportContactUrl ?: $supportGroupUrl,
