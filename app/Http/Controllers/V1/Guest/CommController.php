@@ -12,6 +12,9 @@ class CommController extends Controller
 {
     public function config()
     {
+        $supportContactUrl = admin_setting('support_contact_url');
+        $supportGroupUrl = admin_setting('support_group_url', admin_setting('telegram_discuss_link'));
+
         $data = [
             'tos_url' => admin_setting('tos_url'),
             'is_email_verify' => (int) admin_setting('email_verify', 0) ? 1 : 0,
@@ -29,9 +32,14 @@ class CommController extends Controller
             'app_url' => admin_setting('app_url'),
             'logo' => admin_setting('logo'),
             'support_contact_label' => admin_setting('support_contact_label'),
-            'support_contact_url' => admin_setting('support_contact_url'),
+            'support_contact_url' => $supportContactUrl,
             'support_group_label' => admin_setting('support_group_label'),
-            'support_group_url' => admin_setting('support_group_url', admin_setting('telegram_discuss_link')),
+            'support_group_url' => $supportGroupUrl,
+            // APP 兼容字段：hiddify-app 当前从 customer_service* 读取客服入口。
+            // 保留 support_* 字段给 DK_Theme/旧前端，同时补充别名避免前端分叉。
+            'customer_service' => $supportContactUrl ?: $supportGroupUrl,
+            'customer_service_url' => $supportContactUrl ?: $supportGroupUrl,
+            'customerServiceUrl' => $supportContactUrl ?: $supportGroupUrl,
             // 保持向后兼容
             'is_recaptcha' => (int) admin_setting('captcha_enable', 0) ? 1 : 0,
         ];

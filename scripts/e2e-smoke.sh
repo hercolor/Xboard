@@ -32,7 +32,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-$userIds = User::where('email', 'like', 'xboard-e2e-%@example.invalid')->pluck('id')->all();
+$userIds = User::where('email', 'like', 'xboard-e2e-%@gmail.com')->pluck('id')->all();
 if ($userIds) {
     DB::table('personal_access_tokens')
         ->where('tokenable_type', User::class)
@@ -43,7 +43,7 @@ if ($userIds) {
 Server::where('code', 'like', 'xboard-e2e-%')->delete();
 Plan::where('name', 'like', '[e2e]%')->delete();
 ServerGroup::where('name', 'like', '[e2e]%')->delete();
-foreach (['xboard-e2e-forget@example.invalid', 'xboard-e2e-mail@example.invalid'] as $email) {
+foreach (['xboard-e2e-forget@gmail.com', 'xboard-e2e-mail@gmail.com'] as $email) {
     Cache::forget('EMAIL_VERIFY_CODE_' . $email);
     Cache::forget('LAST_SEND_EMAIL_VERIFY_TIMESTAMP_' . $email);
     Cache::forget('FORGET_REQUEST_LIMIT_' . $email);
@@ -89,7 +89,7 @@ $plan = Plan::create([
 ]);
 
 $member = User::create([
-    'email' => 'xboard-e2e-member-' . $stamp . '@example.invalid',
+    'email' => 'xboard-e2e-member-' . $stamp . '@gmail.com',
     'password' => password_hash($password, PASSWORD_DEFAULT),
     'password_algo' => null,
     'password_salt' => null,
@@ -108,7 +108,7 @@ $member = User::create([
 ]);
 
 $admin = User::create([
-    'email' => 'xboard-e2e-admin-' . $stamp . '@example.invalid',
+    'email' => 'xboard-e2e-admin-' . $stamp . '@gmail.com',
     'password' => password_hash($password, PASSWORD_DEFAULT),
     'password_algo' => null,
     'password_salt' => null,
@@ -152,8 +152,8 @@ echo json_encode([
     'admin_email' => $admin->email,
     'member_email' => $member->email,
     'member_token' => $member->token,
-    'register_email' => 'xboard-e2e-register-' . $stamp . '@example.invalid',
-    'mail_email' => 'xboard-e2e-mail-' . $stamp . '@example.invalid',
+    'register_email' => 'xboard-e2e-register-' . $stamp . '@gmail.com',
+    'mail_email' => 'xboard-e2e-mail-' . $stamp . '@gmail.com',
     'forget_email' => $member->email,
     'forget_code' => '123456',
     'server_id' => $server->id,
@@ -315,6 +315,17 @@ assert_code 302 "$code" "V1 token2Login redirect"
 
 code="$(http_code "$BASE_URL/api/v1/guest/comm/config")"
 assert_code 200 "$code" "guest comm/config"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "guest comm/config missing APP customer service aliases"
+import json, sys
+data = json.load(open(sys.argv[1]))['data']
+for key in ('support_contact_url', 'support_group_url', 'customer_service', 'customer_service_url', 'customerServiceUrl'):
+    if key not in data:
+        raise SystemExit(f'missing {key}')
+expected = data.get('support_contact_url') or data.get('support_group_url')
+for key in ('customer_service', 'customer_service_url', 'customerServiceUrl'):
+    if data.get(key) != expected:
+        raise SystemExit(f'{key}={data.get(key)!r} expected {expected!r}')
+PY
 code="$(http_code "$BASE_URL/api/v1/guest/plan/fetch")"
 assert_code 200 "$code" "guest plan/fetch"
 

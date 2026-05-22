@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use Closure;
+use App\Http\Controllers\V1\Guest\CommController;
+use App\Support\Setting as SettingsRepository;
 use Illuminate\Routing\Route;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tests\TestCase;
@@ -53,6 +55,36 @@ final class AdminOnlyShellContractTest extends TestCase
         $this->assertRouteIsMounted('POST', 'api/v1/guest/telegram/webhook');
         $this->assertRouteIsMounted('GET', 'api/v1/guest/payment/notify/{method}/{uuid}');
         $this->assertRouteIsMounted('POST', 'api/v1/guest/payment/notify/{method}/{uuid}');
+    }
+
+    public function test_guest_comm_config_keeps_support_fields_and_adds_app_customer_service_aliases(): void
+    {
+        app()->instance(SettingsRepository::class, new class extends SettingsRepository {
+            private array $settings = [
+                'support_contact_label' => 'Support',
+                'support_contact_url' => 'https://support.example.invalid/contact',
+                'support_group_label' => 'Group',
+                'support_group_url' => 'https://support.example.invalid/group',
+            ];
+
+            public function __construct()
+            {
+            }
+
+            public function get(string $key, mixed $default = null): mixed
+            {
+                return $this->settings[strtolower($key)] ?? $default;
+            }
+        });
+
+        $payload = (new CommController())->config()->getData(true);
+
+        $this->assertSame('success', $payload['status']);
+        $this->assertSame('https://support.example.invalid/contact', $payload['data']['support_contact_url']);
+        $this->assertSame('https://support.example.invalid/group', $payload['data']['support_group_url']);
+        $this->assertSame('https://support.example.invalid/contact', $payload['data']['customer_service']);
+        $this->assertSame('https://support.example.invalid/contact', $payload['data']['customer_service_url']);
+        $this->assertSame('https://support.example.invalid/contact', $payload['data']['customerServiceUrl']);
     }
 
     /**
