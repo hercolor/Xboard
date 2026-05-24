@@ -14,6 +14,7 @@ class UserRoute
         ], function ($router) {
             // User
             $router->get('/resetSecurity', [UserController::class, 'resetSecurity']);
+            $router->post('/resetSecurity', [UserController::class, 'resetSecurity'])->middleware('throttle:user-mutation');
             $router->get('/info', [UserController::class, 'info'])->middleware('throttle:user-read');
         });
     }

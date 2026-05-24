@@ -176,6 +176,11 @@ Acceptance:
   - Added `user-mutation` limiter and applied it to account/session, non-checkout order, ticket, coupon, and gift-card mutation routes.
   - Checkout, side-effect GETs, Stripe public-key lookup, subscription delivery, callbacks, server/node routes, and AES remain unchanged.
 
+- 2026-05-24: Side-effect GET retirement compatibility aliases added.
+  - Artifact: `docs/api-side-effect-get-retirement-plan.md`.
+  - Added POST aliases for V1/V2 `resetSecurity` and V1 `invite/save` with `throttle:user-mutation`.
+  - Legacy GET routes remain mounted unchanged for DK_Theme/hiddify-app compatibility.
+
 ## Recommended immediate next task
 
-Plan side-effect GET retirement before code: add POST aliases for `resetSecurity` and `invite/save` while keeping legacy GET compatibility. Do not remove GET routes or change response shapes without DK_Theme/hiddify-app migration evidence.
+Plan remaining Phase 6 hardening: decide whether to add deprecation telemetry for side-effect GET routes, or create a payment-adjacent policy for Stripe public-key lookup and checkout/callback fixtures. Do not remove GET routes or change subscription/payment/server payloads without migration evidence.

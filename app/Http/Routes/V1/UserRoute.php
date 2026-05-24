@@ -26,6 +26,7 @@ class UserRoute
         ], function ($router) {
             // User
             $router->get('/resetSecurity', [UserController::class, 'resetSecurity']);
+            $router->post('/resetSecurity', [UserController::class, 'resetSecurity'])->middleware('throttle:user-mutation');
             $router->get('/info', [UserController::class, 'info'])->middleware('throttle:user-read');
             $router->post('/changePassword', [UserController::class, 'changePassword'])->middleware('throttle:user-mutation');
             $router->post('/update', [UserController::class, 'update'])->middleware('throttle:user-mutation');
@@ -48,6 +49,7 @@ class UserRoute
             $router->get('/plan/fetch', [PlanController::class, 'fetch'])->middleware('throttle:user-read');
             // Invite
             $router->get('/invite/save', [InviteController::class, 'save']);
+            $router->post('/invite/save', [InviteController::class, 'save'])->middleware('throttle:user-mutation');
             $router->get('/invite/fetch', [InviteController::class, 'fetch'])->middleware('throttle:user-read');
             $router->get('/invite/details', [InviteController::class, 'details'])->middleware('throttle:user-read');
             // Notice
