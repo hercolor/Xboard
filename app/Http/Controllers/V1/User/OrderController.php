@@ -171,21 +171,9 @@ class OrderController extends Controller
         return $this->success($order->status);
     }
 
-    public function getPaymentMethod()
+    public function getPaymentMethod(LegacyOrderReadModel $readModel)
     {
-        $methods = Payment::select([
-            'id',
-            'name',
-            'payment',
-            'icon',
-            'handling_fee_fixed',
-            'handling_fee_percent'
-        ])
-            ->where('enable', 1)
-            ->orderBy('sort', 'ASC')
-            ->get();
-
-        return $this->success($methods);
+        return $this->success($readModel->paymentMethods());
     }
 
     public function cancel(Request $request)

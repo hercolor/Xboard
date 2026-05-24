@@ -21,9 +21,20 @@ final class LegacyOrderReadModelContractTest extends TestCase
         $this->assertStringContainsString('LegacyOrderReadModel $readModel', $controllerSource);
         $this->assertStringContainsString('fetchForUser(', $controllerSource);
         $this->assertStringContainsString('detailForUser(', $controllerSource);
+        $this->assertStringContainsString('getPaymentMethod(LegacyOrderReadModel $readModel)', $controllerSource);
+        $this->assertStringContainsString('$readModel->paymentMethods()', $controllerSource);
         $this->assertContains('prices', LegacyOrderReadModel::PLAN_COLUMNS);
         $this->assertContains('reset_traffic_method', LegacyOrderReadModel::PLAN_COLUMNS);
         $this->assertSame(['id', 'name', 'payment', 'icon'], LegacyOrderReadModel::PAYMENT_COLUMNS);
+        $this->assertSame([
+            'id',
+            'name',
+            'payment',
+            'icon',
+            'handling_fee_fixed',
+            'handling_fee_percent',
+        ], LegacyOrderReadModel::PAYMENT_METHOD_COLUMNS);
+        $this->assertStringContainsString('select(self::PAYMENT_METHOD_COLUMNS)', $readModelSource);
         $this->assertStringContainsString('PlanResource::make($this->plan)', $resourceSource);
         $this->assertStringContainsString("'payment' => \$this->whenLoaded('payment'", $resourceSource);
     }

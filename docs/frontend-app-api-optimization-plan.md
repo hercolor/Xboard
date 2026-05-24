@@ -323,6 +323,12 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Selected only legacy notice response columns instead of loading full rows.
   - Added source-contract and runtime smoke coverage for the raw notice list contract.
   - No legacy API shape change, no subscription delivery change, no AES.
+- 2026-05-24: Phase 5 payment-method read slice completed.
+  - Moved legacy `/api/v1/user/order/getPaymentMethod` reads into `LegacyOrderReadModel::paymentMethods()`.
+  - Preserved the existing success envelope and payment-method fields: `id`, `name`, `payment`, `icon`, `handling_fee_fixed`, `handling_fee_percent`.
+  - Kept checkout/payment execution, admin payment mutations, plugin payment service behavior, and cache policy unchanged.
+  - Added source-contract and runtime smoke coverage to prevent leaking `config`, `uuid`, `notify_domain`, or `enable` through the user payment-method list.
+  - No legacy API shape change, no subscription delivery change, no AES.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
@@ -333,5 +339,5 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 Recommended next backend optimization step:
 
 ```text
-Audit legacy `order/getPaymentMethod` and choose the smallest safe read slice: preserve the existing success envelope and payment-method fields, keep checkout/payment execution untouched, avoid cache invalidation risk unless admin update boundaries are covered, and add contract tests before any optimization.
+Run a Phase 5 wrap-up audit over remaining frontend/App read endpoints and choose the next narrow slice only if it has measurable read-path benefit. Keep subscription delivery, checkout/payment mutations, auth/session behavior, AES, DK_Theme, and hiddify-app compatibility unchanged.
 ```

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\User;
 
 use App\Models\Order;
+use App\Models\Payment;
 use Illuminate\Database\Eloquent\Collection;
 
 final class LegacyOrderReadModel
@@ -35,6 +36,27 @@ final class LegacyOrderReadModel
         'payment',
         'icon',
     ];
+
+    public const PAYMENT_METHOD_COLUMNS = [
+        'id',
+        'name',
+        'payment',
+        'icon',
+        'handling_fee_fixed',
+        'handling_fee_percent',
+    ];
+
+    /**
+     * @return Collection<int, Payment>
+     */
+    public function paymentMethods(): Collection
+    {
+        return Payment::query()
+            ->select(self::PAYMENT_METHOD_COLUMNS)
+            ->where('enable', 1)
+            ->orderBy('sort', 'ASC')
+            ->get();
+    }
 
     /**
      * @return Collection<int, Order>

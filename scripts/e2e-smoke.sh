@@ -29,6 +29,7 @@ use App\Models\InviteCode;
 use App\Models\Knowledge;
 use App\Models\Notice;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
@@ -55,6 +56,7 @@ if ($userIds) {
 }
 Knowledge::where('title', 'like', '[e2e]%')->delete();
 Notice::where('title', 'like', '[e2e]%')->delete();
+Payment::where('name', 'like', '[e2e]%')->delete();
 Server::where('code', 'like', 'xboard-e2e-%')->delete();
 Plan::where('name', 'like', '[e2e]%')->delete();
 ServerGroup::where('name', 'like', '[e2e]%')->delete();
@@ -77,6 +79,7 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\Knowledge;
 use App\Models\Notice;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
@@ -179,6 +182,19 @@ $notice = Notice::create([
     'sort' => 1,
 ]);
 
+$payment = Payment::create([
+    'uuid' => md5('payment' . $stamp),
+    'payment' => 'manual',
+    'name' => '[e2e] Payment ' . $stamp,
+    'icon' => 'e2e-icon',
+    'config' => [],
+    'notify_domain' => null,
+    'handling_fee_fixed' => 12,
+    'handling_fee_percent' => 1.5,
+    'enable' => true,
+    'sort' => 1,
+]);
+
 echo json_encode([
     'secure_path' => $securePath,
     'subscribe_path' => $subscribePath ?: 's',
@@ -190,6 +206,7 @@ echo json_encode([
     'plan_id' => $plan->id,
     'knowledge_id' => $knowledge->id,
     'notice_id' => $notice->id,
+    'payment_id' => $payment->id,
     'register_email' => 'xboard-e2e-register-' . $stamp . '@gmail.com',
     'mail_email' => 'xboard-e2e-mail-' . $stamp . '@gmail.com',
     'forget_email' => $member->email,
@@ -264,6 +281,7 @@ member_token="$(json_get member_token)"
 plan_id="$(json_get plan_id)"
 knowledge_id="$(json_get knowledge_id)"
 notice_id="$(json_get notice_id)"
+payment_id="$(json_get payment_id)"
 password="$(json_get password)"
 register_email="$(json_get register_email)"
 mail_email="$(json_get mail_email)"
@@ -413,6 +431,26 @@ if payload.get('status') != 'success' or not isinstance(data, dict):
 for key in ('trade_no', 'period', 'plan', 'try_out_plan_id'):
     if key not in data:
         raise SystemExit(f'missing {key}: {data}')
+PY
+
+code="$(get_auth "$BASE_URL/api/v1/user/order/getPaymentMethod" "$member_auth")"
+assert_code 200 "$code" "V1 order/getPaymentMethod"
+python3 - /tmp/e2e-body.$$ "$payment_id" <<'PY' || fail "V1 order/getPaymentMethod did not keep payment method contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+payment_id = int(sys.argv[2])
+items = payload.get('data')
+if payload.get('status') != 'success' or not isinstance(items, list):
+    raise SystemExit(payload)
+match = next((item for item in items if item.get('id') == payment_id), None)
+if not match:
+    raise SystemExit(payload)
+for key in ('id', 'name', 'payment', 'icon', 'handling_fee_fixed', 'handling_fee_percent'):
+    if key not in match:
+        raise SystemExit(f'missing {key}: {match}')
+for forbidden in ('config', 'uuid', 'notify_domain', 'enable'):
+    if forbidden in match:
+        raise SystemExit(f'leaked {forbidden}: {match}')
 PY
 
 code="$(get_auth "$BASE_URL/api/v1/user/notice/fetch" "$member_auth")"
