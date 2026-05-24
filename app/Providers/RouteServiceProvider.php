@@ -209,6 +209,17 @@ class RouteServiceProvider extends ServiceProvider
                 ->by($request->ip() . '|payment-config|' . $userId);
         });
 
+        RateLimiter::for('payment-checkout', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $userId = $request->user()?->id ?: 'guest';
+
+            return Limit::perMinute((int) config('api_security.rate_limits.payment_checkout_per_minute', 30))
+                ->by($request->ip() . '|payment-checkout|' . $userId);
+        });
+
         RateLimiter::for('app-read', function (Request $request) {
             if (!$this->apiRateLimitsEnabled()) {
                 return Limit::none();

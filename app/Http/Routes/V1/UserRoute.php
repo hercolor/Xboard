@@ -39,7 +39,7 @@ class UserRoute
             $router->post('/removeActiveSession', [UserController::class, 'removeActiveSession'])->middleware('throttle:user-mutation');
             // Order
             $router->post('/order/save', [OrderController::class, 'save'])->middleware('throttle:user-mutation');
-            $router->post('/order/checkout', [OrderController::class, 'checkout']);
+            $router->post('/order/checkout', [OrderController::class, 'checkout'])->middleware('throttle:payment-checkout');
             $router->get('/order/check', [OrderController::class, 'check']);
             $router->get('/order/detail', [OrderController::class, 'detail'])->middleware('throttle:user-read');
             $router->get('/order/fetch', [OrderController::class, 'fetch'])->middleware('throttle:user-read');

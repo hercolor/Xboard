@@ -221,6 +221,10 @@ Acceptance:
   - Recommended first behavior-compatible production slice: dedicated `payment-checkout` limiter on authenticated checkout only.
   - Runtime behavior remains unchanged.
 
+- 2026-05-24: Dedicated authenticated checkout limiter implemented.
+  - Added `payment-checkout` limiter to `POST /api/v1/user/order/checkout`.
+  - Payment callbacks, provider behavior, response shapes, subscription delivery, and AES remain unchanged.
+
 ## Recommended immediate next task
 
-Implement the dedicated `payment-checkout` limiter on authenticated checkout only; do not alter callback behavior or response shapes.
+Plan the next payment hardening slice: callback failure telemetry or checkout idempotency, with no callback behavior changes until approved.
