@@ -151,9 +151,13 @@ Acceptance:
   - Added `tests/Feature/ApiSensitiveFieldLeakageContractTest.php`.
   - Locked App session secret omission, payment method user allowlist, dashboard summary allowlists, and traffic log storage-column exclusions.
   - Runtime behavior unchanged.
+- 2026-05-24: Slice 2 rate-limit hardening plan completed.
+  - Artifact: `docs/api-rate-limit-hardening-slice2-plan.md`.
+  - Decision: first implementation batch should only add `throttle:user-read` to high-confidence V1 read routes with Phase 5 coverage.
+  - Runtime behavior unchanged.
 
 ## Recommended immediate next task
 
-Start **Slice 2 — Rate-limit policy hardening** with a planning/audit sub-slice first.
+Implement the first Slice 2 route-middleware batch: add `throttle:user-read` to V1 `getStat`, `stat/getTrafficLog`, order read trio, notice reads, and knowledge reads; update route-middleware tests and run E2E smoke.
 
-Reason: sensitive-field guardrails are now in place; before adding middleware, decide exact route groups and compatibility tests for user reads, user mutations, and partial auth-throttle gaps.
+Reason: these routes have Phase 5 read-model or smoke coverage and do not touch subscription delivery, server/node payloads, checkout, auth mutations, or AES.
