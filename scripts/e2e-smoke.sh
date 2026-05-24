@@ -26,6 +26,7 @@ $app = require "bootstrap/app.php";
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\InviteCode;
+use App\Models\Knowledge;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Server;
@@ -51,6 +52,7 @@ if ($userIds) {
     Order::whereIn('user_id', $userIds)->delete();
     User::whereIn('id', $userIds)->delete();
 }
+Knowledge::where('title', 'like', '[e2e]%')->delete();
 Server::where('code', 'like', 'xboard-e2e-%')->delete();
 Plan::where('name', 'like', '[e2e]%')->delete();
 ServerGroup::where('name', 'like', '[e2e]%')->delete();
@@ -71,6 +73,7 @@ require "vendor/autoload.php";
 $app = require "bootstrap/app.php";
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
+use App\Models\Knowledge;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
@@ -155,6 +158,15 @@ $server = Server::create([
     'enabled' => true,
 ]);
 
+$knowledge = Knowledge::create([
+    'language' => 'en',
+    'category' => '[e2e] Help',
+    'title' => '[e2e] Knowledge ' . $stamp,
+    'body' => 'Knowledge smoke {{siteName}} {{subscribeUrl}}',
+    'show' => true,
+    'sort' => 1,
+]);
+
 echo json_encode([
     'secure_path' => $securePath,
     'subscribe_path' => $subscribePath ?: 's',
@@ -164,6 +176,7 @@ echo json_encode([
     'member_email' => $member->email,
     'member_token' => $member->token,
     'plan_id' => $plan->id,
+    'knowledge_id' => $knowledge->id,
     'register_email' => 'xboard-e2e-register-' . $stamp . '@gmail.com',
     'mail_email' => 'xboard-e2e-mail-' . $stamp . '@gmail.com',
     'forget_email' => $member->email,
@@ -236,6 +249,7 @@ admin_email="$(json_get admin_email)"
 member_email="$(json_get member_email)"
 member_token="$(json_get member_token)"
 plan_id="$(json_get plan_id)"
+knowledge_id="$(json_get knowledge_id)"
 password="$(json_get password)"
 register_email="$(json_get register_email)"
 mail_email="$(json_get mail_email)"
@@ -385,6 +399,42 @@ if payload.get('status') != 'success' or not isinstance(data, dict):
 for key in ('trade_no', 'period', 'plan', 'try_out_plan_id'):
     if key not in data:
         raise SystemExit(f'missing {key}: {data}')
+PY
+
+code="$(get_auth "$BASE_URL/api/v1/user/knowledge/getCategory?language=en" "$member_auth")"
+assert_code 200 "$code" "V1 knowledge/getCategory"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 knowledge/getCategory did not keep category list contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+data = payload.get('data')
+if payload.get('status') != 'success' or '[e2e] Help' not in data:
+    raise SystemExit(payload)
+PY
+code="$(get_auth "$BASE_URL/api/v1/user/knowledge/fetch?language=en" "$member_auth")"
+assert_code 200 "$code" "V1 knowledge/fetch list"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 knowledge/fetch list did not keep grouped body contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+data = payload.get('data')
+if payload.get('status') != 'success' or '[e2e] Help' not in data or not data['[e2e] Help']:
+    raise SystemExit(payload)
+first = data['[e2e] Help'][0]
+for key in ('id', 'category', 'title', 'body', 'updated_at'):
+    if key not in first:
+        raise SystemExit(f'missing {key}: {first}')
+if '{{subscribeUrl}}' in str(first.get('body')):
+    raise SystemExit(first)
+PY
+code="$(get_auth "$BASE_URL/api/v1/user/knowledge/fetch?id=$knowledge_id" "$member_auth")"
+assert_code 200 "$code" "V1 knowledge/fetch detail"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 knowledge/fetch detail did not keep body contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+data = payload.get('data')
+if payload.get('status') != 'success' or not isinstance(data, dict) or 'body' not in data:
+    raise SystemExit(payload)
+if '{{siteName}}' in str(data.get('body')) or '{{subscribeUrl}}' in str(data.get('body')):
+    raise SystemExit(data)
 PY
 
 code="$(get_auth "$BASE_URL/api/app/v1/dashboard" "$member_auth")"

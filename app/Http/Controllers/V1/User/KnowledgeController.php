@@ -65,7 +65,7 @@ class KnowledgeController extends Controller
         }
 
         $knowledge = $knowledge->toArray();
-        $knowledge = $this->processKnowledgeContent($knowledge, $request->user());
+        $knowledge = $this->processKnowledgeContent($knowledge, $this->buildRenderContext($request->user()));
 
         return $this->success(KnowledgeResource::make($knowledge));
     }
@@ -84,10 +84,11 @@ class KnowledgeController extends Controller
             });
         }
 
+        $renderContext = $this->buildRenderContext($request->user());
         $knowledges = $builder->get()
-            ->map(function ($knowledge) use ($request) {
+            ->map(function ($knowledge) use ($renderContext) {
                 $knowledge = $knowledge->toArray();
-                $knowledge = $this->processKnowledgeContent($knowledge, $request->user());
+                $knowledge = $this->processKnowledgeContent($knowledge, $renderContext);
                 return KnowledgeResource::make($knowledge);
             })
             ->groupBy('category');
@@ -100,17 +101,30 @@ class KnowledgeController extends Controller
         return Knowledge::select($select)->where('show', 1);
     }
 
-    private function processKnowledgeContent(array $knowledge, User $user): array
+    /**
+     * @return array{has_access: bool, subscribe_url: string}
+     */
+    private function buildRenderContext(User $user): array
+    {
+        return [
+            'has_access' => $this->userService->isAvailable($user),
+            'subscribe_url' => Helper::getSubscribeUrl($user['token']),
+        ];
+    }
+
+    /**
+     * @param array{has_access: bool, subscribe_url: string} $renderContext
+     */
+    private function processKnowledgeContent(array $knowledge, array $renderContext): array
     {
         if (!isset($knowledge['body'])) {
             return $knowledge;
         }
 
-        if (!$this->userService->isAvailable($user)) {
+        if (!$renderContext['has_access']) {
             $this->formatAccessData($knowledge['body']);
         }
-        $subscribeUrl = Helper::getSubscribeUrl($user['token']);
-        $knowledge['body'] = $this->replacePlaceholders($knowledge['body'], $subscribeUrl);
+        $knowledge['body'] = $this->replacePlaceholders($knowledge['body'], $renderContext['subscribe_url']);
 
         return $knowledge;
     }
