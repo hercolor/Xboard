@@ -155,9 +155,11 @@ Acceptance:
   - Artifact: `docs/api-rate-limit-hardening-slice2-plan.md`.
   - Decision: first implementation batch should only add `throttle:user-read` to high-confidence V1 read routes with Phase 5 coverage.
   - Runtime behavior unchanged.
+- 2026-05-24: Slice 2 first route-middleware batch completed.
+  - Added `throttle:user-read` to V1 `getStat`, `stat/getTrafficLog`, order read trio, notice reads, and knowledge reads.
+  - Updated route-middleware contract coverage in `ApiSecurityPilotTest`.
+  - Subscription delivery, server/node payloads, checkout, auth mutations, and AES remain unchanged.
 
 ## Recommended immediate next task
 
-Implement the first Slice 2 route-middleware batch: add `throttle:user-read` to V1 `getStat`, `stat/getTrafficLog`, order read trio, notice reads, and knowledge reads; update route-middleware tests and run E2E smoke.
-
-Reason: these routes have Phase 5 read-model or smoke coverage and do not touch subscription delivery, server/node payloads, checkout, auth mutations, or AES.
+Plan the next Phase 6 hardening slice before code: either expand `user-read` to invite/ticket/plan reads, or design a separate user-mutation/auth throttle policy. Do not touch subscription delivery, server/node payloads, checkout, callbacks, or AES without a dedicated plan and fixtures.

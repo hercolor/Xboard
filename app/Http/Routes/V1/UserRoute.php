@@ -30,7 +30,7 @@ class UserRoute
             $router->post('/changePassword', [UserController::class, 'changePassword']);
             $router->post('/update', [UserController::class, 'update']);
             $router->get('/getSubscribe', [UserController::class, 'getSubscribe']);
-            $router->get('/getStat', [UserController::class, 'getStat']);
+            $router->get('/getStat', [UserController::class, 'getStat'])->middleware('throttle:user-read');
             $router->get('/checkLogin', [UserController::class, 'checkLogin']);
             $router->post('/transfer', [UserController::class, 'transfer']);
             $router->post('/getQuickLoginUrl', [UserController::class, 'getQuickLoginUrl']);
@@ -40,9 +40,9 @@ class UserRoute
             $router->post('/order/save', [OrderController::class, 'save']);
             $router->post('/order/checkout', [OrderController::class, 'checkout']);
             $router->get('/order/check', [OrderController::class, 'check']);
-            $router->get('/order/detail', [OrderController::class, 'detail']);
-            $router->get('/order/fetch', [OrderController::class, 'fetch']);
-            $router->get('/order/getPaymentMethod', [OrderController::class, 'getPaymentMethod']);
+            $router->get('/order/detail', [OrderController::class, 'detail'])->middleware('throttle:user-read');
+            $router->get('/order/fetch', [OrderController::class, 'fetch'])->middleware('throttle:user-read');
+            $router->get('/order/getPaymentMethod', [OrderController::class, 'getPaymentMethod'])->middleware('throttle:user-read');
             $router->post('/order/cancel', [OrderController::class, 'cancel']);
             // Plan
             $router->get('/plan/fetch', [PlanController::class, 'fetch']);
@@ -51,7 +51,7 @@ class UserRoute
             $router->get('/invite/fetch', [InviteController::class, 'fetch']);
             $router->get('/invite/details', [InviteController::class, 'details']);
             // Notice
-            $router->get('/notice/fetch', [NoticeController::class, 'fetch']);
+            $router->get('/notice/fetch', [NoticeController::class, 'fetch'])->middleware('throttle:user-read');
             // Ticket
             $router->post('/ticket/reply', [TicketController::class, 'reply']);
             $router->post('/ticket/close', [TicketController::class, 'close']);
@@ -74,10 +74,10 @@ class UserRoute
             $router->get('/comm/config', [CommController::class, 'config']);
             $router->Post('/comm/getStripePublicKey', [CommController::class, 'getStripePublicKey']);
             // Knowledge
-            $router->get('/knowledge/fetch', [KnowledgeController::class, 'fetch']);
-            $router->get('/knowledge/getCategory', [KnowledgeController::class, 'getCategory']);
+            $router->get('/knowledge/fetch', [KnowledgeController::class, 'fetch'])->middleware('throttle:user-read');
+            $router->get('/knowledge/getCategory', [KnowledgeController::class, 'getCategory'])->middleware('throttle:user-read');
             // Stat
-            $router->get('/stat/getTrafficLog', [StatController::class, 'getTrafficLog']);
+            $router->get('/stat/getTrafficLog', [StatController::class, 'getTrafficLog'])->middleware('throttle:user-read');
         });
     }
 }

@@ -99,6 +99,14 @@ final class ApiSecurityPilotTest extends TestCase
         $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
 
         foreach ([
+            ['GET', 'api/v1/user/getStat', 'throttle:user-read'],
+            ['GET', 'api/v1/user/stat/getTrafficLog', 'throttle:user-read'],
+            ['GET', 'api/v1/user/order/fetch', 'throttle:user-read'],
+            ['GET', 'api/v1/user/order/detail', 'throttle:user-read'],
+            ['GET', 'api/v1/user/order/getPaymentMethod', 'throttle:user-read'],
+            ['GET', 'api/v1/user/notice/fetch', 'throttle:user-read'],
+            ['GET', 'api/v1/user/knowledge/fetch', 'throttle:user-read'],
+            ['GET', 'api/v1/user/knowledge/getCategory', 'throttle:user-read'],
             ['POST', "api/v2/{$securePath}/auth/login", 'throttle:admin-login'],
             ['POST', "api/v2/{$securePath}/auth/login", 'api.request_size:passport'],
             ['GET', "api/v2/{$securePath}/auth/me", 'throttle:admin-api'],
