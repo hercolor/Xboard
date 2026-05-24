@@ -349,5 +349,5 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 Recommended next backend optimization step:
 
 ```text
-Phase 5 read-path optimization is closed by `docs/frontend-app-api-phase5-wrap-up-audit.md`. Next recommended work is a separate Phase 6 API security hardening plan: rate limits, sensitive-field leakage checks, side-effect GET retirement strategy, and error-envelope consistency; do not implement AES or change legacy client contracts without a new explicit plan.
+Phase 5 read-path optimization is closed by `docs/frontend-app-api-phase5-wrap-up-audit.md`. Phase 6 planning is captured in `docs/api-security-hardening-phase6-plan.md`; immediate next task is Slice 0 security baseline matrix, with no AES or legacy client contract changes.
 ```
