@@ -13,6 +13,7 @@ use App\Services\Plugin\HookManager;
 use App\Services\Plugin\PluginManager;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use PDO;
@@ -142,6 +143,17 @@ final class PaymentCheckoutCallbackFixtureTest extends TestCase
     public function test_callback_invalid_payload_keeps_existing_failure_envelope_and_order_pending(): void
     {
         Bus::fake();
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(function (string $message, array $context) use (&$payment): bool {
+                return $message === 'payment_notify_verification_failed'
+                    && $context['method'] === SyntheticPaymentPlugin::METHOD
+                    && $context['uuid_hash'] === hash('sha256', $payment->uuid)
+                    && $context['reason'] === 'verify_false'
+                    && in_array('fixture_signature', $context['payload_keys'], true)
+                    && in_array('trade_no', $context['payload_keys'], true)
+                    && !array_key_exists('payload', $context);
+            });
 
         $user = $this->makeUser(['email' => 'fixture-invalid-callback@example.invalid']);
         $plan = $this->makePlan(['name' => 'Fixture invalid callback plan']);

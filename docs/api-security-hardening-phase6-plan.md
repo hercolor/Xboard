@@ -225,6 +225,11 @@ Acceptance:
   - Added `payment-checkout` limiter to `POST /api/v1/user/order/checkout`.
   - Payment callbacks, provider behavior, response shapes, subscription delivery, and AES remain unchanged.
 
+- 2026-05-24: Payment callback failure telemetry implemented.
+  - Artifact: `docs/api-payment-callback-telemetry-plan.md`.
+  - Added structured warning logs for callback verification failures without logging raw payload values.
+  - Callback responses, provider behavior, subscription delivery, and AES remain unchanged.
+
 ## Recommended immediate next task
 
-Plan the next payment hardening slice: callback failure telemetry or checkout idempotency, with no callback behavior changes until approved.
+Plan checkout idempotency before changing checkout mutation behavior.
