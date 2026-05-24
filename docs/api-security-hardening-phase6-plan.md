@@ -240,6 +240,10 @@ Acceptance:
   - Duplicate concurrent checkout requests return the existing fail envelope style; provider results are not cached.
   - Payment callbacks, provider behavior, subscription delivery, and AES remain unchanged.
 
+- 2026-05-24: Phase 6 wrap-up audit completed.
+  - Artifact: `docs/api-security-phase6-wrap-up.md`.
+  - Summarized completed hardening, verification evidence, known local warnings, and next decision paths.
+
 ## Recommended immediate next task
 
-Review Phase 6 security hardening wrap-up and decide whether to pause for deployment packaging or continue with AES design only.
+Choose deployment packaging, AES design-only planning, or provider checkout HTTP seams as the next phase.
