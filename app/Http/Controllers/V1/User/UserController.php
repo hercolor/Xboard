@@ -14,6 +14,7 @@ use App\Services\Auth\LoginService;
 use App\Services\AuthService;
 use App\Services\Plugin\HookManager;
 use App\Services\UserService;
+use App\Services\User\LegacyUserInfoReadModel;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
@@ -85,31 +86,12 @@ class UserController extends Controller
         return $this->success(true);
     }
 
-    public function info(Request $request)
+    public function info(Request $request, LegacyUserInfoReadModel $readModel)
     {
-        $user = User::where('id', $request->user()->id)
-            ->select([
-                'email',
-                'transfer_enable',
-                'last_login_at',
-                'created_at',
-                'banned',
-                'remind_expire',
-                'remind_traffic',
-                'expired_at',
-                'balance',
-                'commission_balance',
-                'plan_id',
-                'discount',
-                'commission_rate',
-                'telegram_id',
-                'uuid'
-            ])
-            ->first();
+        $user = $readModel->forUserId((int) $request->user()->id);
         if (!$user) {
             return $this->fail([400, __('The user does not exist')]);
         }
-        $user['avatar_url'] = 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon';
         return $this->success($user);
     }
 

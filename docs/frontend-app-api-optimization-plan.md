@@ -278,6 +278,12 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Response is allowlist-only: session/subscription/traffic summaries, capped latest orders/tickets/notices, and no subscription token/URL, auth data, UUID, node credentials, payment details, ticket messages, or knowledge bodies.
   - Updated bootstrap capability to `dashboard = true`.
   - Legacy APIs, subscription delivery, node/server APIs, payment, Telegram, plugin hooks, DK_Theme, hiddify-app, and AES remain unchanged.
+- 2026-05-24: Phase 5 hotspot optimization first slice completed.
+  - Extracted legacy `/api/v1/user/info` and `/api/v2/user/info` projection into `App\Services\User\LegacyUserInfoReadModel`.
+  - Preserved the exact legacy user info allowlist fields and `avatar_url` fallback required by DK_Theme/hiddify-app.
+  - Precomputed `/api/app/v1/session` traffic snapshot once per request while keeping the existing App BFF response shape.
+  - Added source/constant contract coverage so legacy user info fields and subscription delivery boundaries remain separated.
+  - No legacy API shape change, no subscription delivery change, no AES.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
@@ -285,8 +291,8 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 
 ### Current next task
 
-Recommended next planning step before client work:
+Recommended next backend optimization step:
 
 ```text
-$ralplan "设计 DK_Theme VITE_ENABLE_APP_BFF 的 session adapter 和 fallback 测试方案；不改代码，先确定 UserInfo/SubscribeInfo 映射缺口。"
+Audit the next read-heavy frontend/App API hotspot and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
 ```

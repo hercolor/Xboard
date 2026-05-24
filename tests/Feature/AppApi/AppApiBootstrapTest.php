@@ -7,6 +7,7 @@ namespace Tests\Feature\AppApi;
 use App\Http\Middleware\AppApiResponseBoundary;
 use App\Http\Middleware\InitializePlugins;
 use App\Services\App\AppSessionReadModel;
+use App\Services\User\LegacyUserInfoReadModel;
 use Illuminate\Routing\Route;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\AppApi\AppBffFixtures;
@@ -247,17 +248,36 @@ final class AppApiBootstrapTest extends TestCase
         }
     }
 
-    public function test_legacy_user_controller_source_keeps_frontend_fallback_fields_documented_for_session_migration(): void
+    public function test_legacy_user_info_read_model_keeps_frontend_fallback_fields_documented_for_session_migration(): void
     {
-        $source = file_get_contents(app_path('Http/Controllers/V1/User/UserController.php'));
+        $controllerSource = file_get_contents(app_path('Http/Controllers/V1/User/UserController.php'));
+        $readModelSource = file_get_contents(app_path('Services/User/LegacyUserInfoReadModel.php'));
 
-        $this->assertIsString($source);
+        $this->assertIsString($controllerSource);
+        $this->assertIsString($readModelSource);
+        $this->assertStringContainsString('LegacyUserInfoReadModel $readModel', $controllerSource);
+
+        $this->assertSame([
+            'email',
+            'transfer_enable',
+            'last_login_at',
+            'created_at',
+            'banned',
+            'remind_expire',
+            'remind_traffic',
+            'expired_at',
+            'balance',
+            'commission_balance',
+            'plan_id',
+            'discount',
+            'commission_rate',
+            'telegram_id',
+            'uuid',
+        ], LegacyUserInfoReadModel::COLUMNS);
+
+        $this->assertStringContainsString('avatar_url', $readModelSource);
 
         foreach ([
-            "'balance'",
-            "'commission_balance'",
-            "'uuid'",
-            '$user[\'avatar_url\']',
             "'token'",
             "'u'",
             "'d'",
@@ -266,8 +286,8 @@ final class AppApiBootstrapTest extends TestCase
             "'next_reset_at'",
             '$user[\'subscribe_url\'] = Helper::getSubscribeUrl($user[\'token\']);',
             'HookManager::filter(\'user.subscribe.response\', $user)',
-        ] as $expectedContractFragment) {
-            $this->assertStringContainsString($expectedContractFragment, $source);
+        ] as $expectedSubscribeFragment) {
+            $this->assertStringContainsString($expectedSubscribeFragment, $controllerSource);
         }
     }
 
