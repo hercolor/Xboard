@@ -147,9 +147,13 @@ Acceptance:
 - 2026-05-24: Slice 0 security baseline matrix completed.
   - Artifact: `docs/api-security-baseline-matrix.md`.
   - Runtime behavior unchanged.
+- 2026-05-24: Slice 1 sensitive-field leakage tests started/completed for App BFF and Phase 5 read-model allowlists.
+  - Added `tests/Feature/ApiSensitiveFieldLeakageContractTest.php`.
+  - Locked App session secret omission, payment method user allowlist, dashboard summary allowlists, and traffic log storage-column exclusions.
+  - Runtime behavior unchanged.
 
 ## Recommended immediate next task
 
-Start **Slice 1 — Sensitive-field leakage tests**.
+Start **Slice 2 — Rate-limit policy hardening** with a planning/audit sub-slice first.
 
-Reason: the baseline shows the riskiest next work is guardrail coverage before changing throttles, side-effect GETs, or response boundaries.
+Reason: sensitive-field guardrails are now in place; before adding middleware, decide exact route groups and compatibility tests for user reads, user mutations, and partial auth-throttle gaps.
