@@ -200,6 +200,10 @@ Acceptance:
   - Added `MGate` callback success/failure and parameter ordering tests.
   - Production checkout/callback/provider behavior remains unchanged.
 
+- 2026-05-24: Third deterministic real-provider payment callback fixture added.
+  - Added `CoinPayments` completed callback, pending callback, HMAC failure, and checkout URL tests.
+  - Production checkout/callback/provider behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Add `CoinPayments` completed and pending callback fixtures before changing checkout/callback production behavior.
+Add `Coinbase` raw-body HMAC callback fixtures before changing checkout/callback production behavior.
