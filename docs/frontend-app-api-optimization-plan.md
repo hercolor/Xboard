@@ -335,6 +335,10 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Selected only traffic-resource columns: `user_id`, `u`, `d`, `record_at`, `server_rate`.
   - Added source-contract and runtime smoke coverage for the traffic log resource contract.
   - No legacy API shape change, no subscription delivery change, no AES.
+- 2026-05-24: Phase 5 wrap-up audit completed.
+  - Audit artifact: `docs/frontend-app-api-phase5-wrap-up-audit.md`.
+  - Decision: stop opportunistic read-path optimization after the covered high-value frontend/App reads.
+  - Next work should be a separately planned API security hardening phase, not additional broad read refactors.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
@@ -345,5 +349,5 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 Recommended next backend optimization step:
 
 ```text
-Run a Phase 5 wrap-up audit over remaining frontend/App read endpoints and decide whether to stop read-path optimization or schedule a new phase. Avoid touching subscription delivery/server node payloads, checkout/payment mutations, auth/session behavior, AES, DK_Theme, and hiddify-app compatibility without a new explicit plan.
+Phase 5 read-path optimization is closed by `docs/frontend-app-api-phase5-wrap-up-audit.md`. Next recommended work is a separate Phase 6 API security hardening plan: rate limits, sensitive-field leakage checks, side-effect GET retirement strategy, and error-envelope consistency; do not implement AES or change legacy client contracts without a new explicit plan.
 ```
