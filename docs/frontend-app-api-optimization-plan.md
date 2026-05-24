@@ -303,6 +303,11 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Preserved the legacy `codes` resource collection and five-position `stat` array.
   - Loaded only invite-code columns used by `InviteCodeResource` and grouped invite/commission aggregates behind one read-model query entry using subselects.
   - Added runtime smoke coverage for invite save/fetch/details contracts.
+- 2026-05-24: Phase 5 order read slice completed.
+  - Extracted legacy `/api/v1/user/order/fetch` and `/api/v1/user/order/detail` reads into `App\Services\User\LegacyOrderReadModel`.
+  - Preserved `OrderResource` payloads while preloading only `PlanResource` and payment fields used by the legacy resources.
+  - Kept order mutations, checkout, payment methods, surplus order handling, and legacy route/envelope shapes unchanged.
+  - Added runtime smoke coverage for order save/fetch/detail contracts.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
@@ -313,5 +318,5 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 Recommended next backend optimization step:
 
 ```text
-Audit the next read-heavy frontend/App API hotspot, likely order list/detail reads or invite commission detail pagination, and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
+Audit the next read-heavy frontend/App API hotspot, likely invite commission detail pagination, notice/knowledge reads, or payment-method reads, and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
 ```

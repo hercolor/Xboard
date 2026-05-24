@@ -14,37 +14,36 @@ use App\Services\CouponService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\PlanService;
+use App\Services\User\LegacyOrderReadModel;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    public function fetch(Request $request)
+    public function fetch(Request $request, LegacyOrderReadModel $readModel)
     {
         $request->validate([
             'status' => 'nullable|integer|in:0,1,2,3',
         ]);
-        $orders = Order::with('plan')
-            ->where('user_id', $request->user()->id)
-            ->when($request->input('status') !== null, function ($query) use ($request) {
-                $query->where('status', $request->input('status'));
-            })
-            ->orderBy('created_at', 'DESC')
-            ->get();
+        $status = $request->input('status');
+        $orders = $readModel->fetchForUser(
+            (int) $request->user()->id,
+            $status !== null ? (int) $status : null
+        );
 
         return $this->success(OrderResource::collection($orders));
     }
 
-    public function detail(Request $request)
+    public function detail(Request $request, LegacyOrderReadModel $readModel)
     {
         $request->validate([
             'trade_no' => 'required|string',
         ]);
-        $order = Order::with(['payment', 'plan'])
-            ->where('user_id', $request->user()->id)
-            ->where('trade_no', $request->input('trade_no'))
-            ->first();
+        $order = $readModel->detailForUser(
+            (int) $request->user()->id,
+            (string) $request->input('trade_no')
+        );
         if (!$order) {
             return $this->fail([400, __('Order does not exist or has been paid')]);
         }

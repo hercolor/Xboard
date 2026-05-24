@@ -26,6 +26,7 @@ $app = require "bootstrap/app.php";
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\InviteCode;
+use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
@@ -47,6 +48,7 @@ if ($userIds) {
         Ticket::whereIn('id', $ticketIds)->delete();
     }
     InviteCode::whereIn('user_id', $userIds)->delete();
+    Order::whereIn('user_id', $userIds)->delete();
     User::whereIn('id', $userIds)->delete();
 }
 Server::where('code', 'like', 'xboard-e2e-%')->delete();
@@ -161,6 +163,7 @@ echo json_encode([
     'admin_email' => $admin->email,
     'member_email' => $member->email,
     'member_token' => $member->token,
+    'plan_id' => $plan->id,
     'register_email' => 'xboard-e2e-register-' . $stamp . '@gmail.com',
     'mail_email' => 'xboard-e2e-mail-' . $stamp . '@gmail.com',
     'forget_email' => $member->email,
@@ -232,6 +235,7 @@ subscribe_path="$(json_get subscribe_path)"
 admin_email="$(json_get admin_email)"
 member_email="$(json_get member_email)"
 member_token="$(json_get member_token)"
+plan_id="$(json_get plan_id)"
 password="$(json_get password)"
 register_email="$(json_get register_email)"
 mail_email="$(json_get mail_email)"
@@ -351,6 +355,36 @@ import json, sys
 payload = json.load(open(sys.argv[1]))
 if 'data' not in payload or 'total' not in payload or not isinstance(payload['data'], list):
     raise SystemExit(payload)
+PY
+
+code="$(post_json "$BASE_URL/api/v1/user/order/save" "{\"plan_id\":$plan_id,\"period\":\"month_price\"}" "$member_auth")"
+assert_code 200 "$code" "V1 order/save"
+assert_json_path /tmp/e2e-body.$$ status success "V1 order/save JSON status"
+trade_no="$(extract_json_path /tmp/e2e-body.$$ data)"
+code="$(get_auth "$BASE_URL/api/v1/user/order/fetch" "$member_auth")"
+assert_code 200 "$code" "V1 order/fetch"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 order/fetch did not keep order list contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+items = payload.get('data')
+if payload.get('status') != 'success' or not isinstance(items, list) or not items:
+    raise SystemExit(payload)
+first = items[0]
+for key in ('trade_no', 'period', 'plan', 'status', 'total_amount'):
+    if key not in first:
+        raise SystemExit(f'missing {key}: {first}')
+PY
+code="$(get_auth "$BASE_URL/api/v1/user/order/detail?trade_no=$trade_no" "$member_auth")"
+assert_code 200 "$code" "V1 order/detail"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 order/detail did not keep detail contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+data = payload.get('data')
+if payload.get('status') != 'success' or not isinstance(data, dict):
+    raise SystemExit(payload)
+for key in ('trade_no', 'period', 'plan', 'try_out_plan_id'):
+    if key not in data:
+        raise SystemExit(f'missing {key}: {data}')
 PY
 
 code="$(get_auth "$BASE_URL/api/app/v1/dashboard" "$member_auth")"
