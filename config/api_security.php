@@ -26,6 +26,7 @@ return [
         'passport_quick_login_per_minute' => (int) env('API_RATE_LIMIT_PASSPORT_QUICK_LOGIN_PER_MINUTE', 30),
         'user_read_per_minute' => (int) env('API_RATE_LIMIT_USER_READ_PER_MINUTE', 120),
         'user_mutation_per_minute' => (int) env('API_RATE_LIMIT_USER_MUTATION_PER_MINUTE', 60),
+        'payment_config_per_minute' => (int) env('API_RATE_LIMIT_PAYMENT_CONFIG_PER_MINUTE', 60),
         'app_read_per_minute' => (int) env('API_RATE_LIMIT_APP_READ_PER_MINUTE', 120),
         'admin_login_per_minute' => (int) env('API_RATE_LIMIT_ADMIN_LOGIN_PER_MINUTE', 10),
         'admin_api_per_minute' => (int) env('API_RATE_LIMIT_ADMIN_API_PER_MINUTE', 240),

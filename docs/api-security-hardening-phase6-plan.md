@@ -181,6 +181,11 @@ Acceptance:
   - Added POST aliases for V1/V2 `resetSecurity` and V1 `invite/save` with `throttle:user-mutation`.
   - Legacy GET routes remain mounted unchanged for DK_Theme/hiddify-app compatibility.
 
+- 2026-05-24: Payment-adjacent config lookup throttled.
+  - Artifact: `docs/api-payment-adjacent-security-policy.md`.
+  - Added dedicated `payment-config` limiter for V1 Stripe public-key lookup.
+  - Checkout execution, payment callbacks, provider configs, response envelopes, subscription delivery, and AES remain unchanged.
+
 ## Recommended immediate next task
 
-Plan remaining Phase 6 hardening: decide whether to add deprecation telemetry for side-effect GET routes, or create a payment-adjacent policy for Stripe public-key lookup and checkout/callback fixtures. Do not remove GET routes or change subscription/payment/server payloads without migration evidence.
+Plan checkout/callback fixture coverage before any payment execution hardening. Do not remove side-effect GET routes or change subscription/payment/server payloads without migration evidence.

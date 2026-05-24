@@ -74,7 +74,7 @@ class UserRoute
             $router->get('/telegram/getBotInfo', [TelegramController::class, 'getBotInfo']);
             // Comm
             $router->get('/comm/config', [CommController::class, 'config']);
-            $router->Post('/comm/getStripePublicKey', [CommController::class, 'getStripePublicKey']);
+            $router->Post('/comm/getStripePublicKey', [CommController::class, 'getStripePublicKey'])->middleware('throttle:payment-config');
             // Knowledge
             $router->get('/knowledge/fetch', [KnowledgeController::class, 'fetch'])->middleware('throttle:user-read');
             $router->get('/knowledge/getCategory', [KnowledgeController::class, 'getCategory'])->middleware('throttle:user-read');

@@ -198,6 +198,17 @@ class RouteServiceProvider extends ServiceProvider
                 ->by($request->ip() . '|user-mutation|' . $userId);
         });
 
+        RateLimiter::for('payment-config', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $userId = $request->user()?->id ?: 'guest';
+
+            return Limit::perMinute((int) config('api_security.rate_limits.payment_config_per_minute', 60))
+                ->by($request->ip() . '|payment-config|' . $userId);
+        });
+
         RateLimiter::for('app-read', function (Request $request) {
             if (!$this->apiRateLimitsEnabled()) {
                 return Limit::none();
