@@ -16,7 +16,9 @@ use App\Services\PaymentService;
 use App\Services\PlanService;
 use App\Services\User\LegacyOrderReadModel;
 use App\Services\UserService;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
@@ -117,46 +119,72 @@ class OrderController extends Controller
     public function checkout(Request $request)
     {
         $tradeNo = $request->input('trade_no');
-        $method = $request->input('method');
-        $order = Order::where('trade_no', $tradeNo)
-            ->where('user_id', $request->user()->id)
-            ->where('status', 0)
-            ->first();
-        if (!$order) {
-            return $this->fail([400, __('Order does not exist or has been paid')]);
+        $checkoutLock = $this->acquireCheckoutLock($request, (string) $tradeNo);
+        if ($checkoutLock === false) {
+            return $this->fail([429, __('Checkout is already processing, please try again later')]);
         }
-        // free process
-        if ($order->total_amount <= 0) {
-            $orderService = new OrderService($order);
-            if (!$orderService->paid($order->trade_no))
-                return $this->fail([400, '支付失败']);
-            return response([
-                'type' => -1,
-                'data' => true
+
+        try {
+            $method = $request->input('method');
+            $order = Order::where('trade_no', $tradeNo)
+                ->where('user_id', $request->user()->id)
+                ->where('status', 0)
+                ->first();
+            if (!$order) {
+                return $this->fail([400, __('Order does not exist or has been paid')]);
+            }
+            // free process
+            if ($order->total_amount <= 0) {
+                $orderService = new OrderService($order);
+                if (!$orderService->paid($order->trade_no))
+                    return $this->fail([400, '支付失败']);
+                return response([
+                    'type' => -1,
+                    'data' => true
+                ]);
+            }
+            $payment = Payment::find($method);
+            if (!$payment || !$payment->enable) {
+                return $this->fail([400, __('Payment method is not available')]);
+            }
+            $paymentService = new PaymentService($payment->payment, $payment->id);
+            $order->handling_amount = NULL;
+            if ($payment->handling_fee_fixed || $payment->handling_fee_percent) {
+                $order->handling_amount = (int) round(($order->total_amount * ($payment->handling_fee_percent / 100)) + $payment->handling_fee_fixed);
+            }
+            $order->payment_id = $method;
+            if (!$order->save())
+                return $this->fail([400, __('Request failed, please try again later')]);
+            $result = $paymentService->pay([
+                'trade_no' => $tradeNo,
+                'total_amount' => isset($order->handling_amount) ? ($order->total_amount + $order->handling_amount) : $order->total_amount,
+                'user_id' => $order->user_id,
+                'stripe_token' => $request->input('token')
             ]);
+            return response([
+                'type' => $result['type'],
+                'data' => $result['data']
+            ]);
+        } finally {
+            $checkoutLock?->release();
         }
-        $payment = Payment::find($method);
-        if (!$payment || !$payment->enable) {
-            return $this->fail([400, __('Payment method is not available')]);
+    }
+
+    private function acquireCheckoutLock(Request $request, string $tradeNo): Lock|false|null
+    {
+        if (!config('api_security.payment_checkout_lock.enabled', true) || $tradeNo === '') {
+            return null;
         }
-        $paymentService = new PaymentService($payment->payment, $payment->id);
-        $order->handling_amount = NULL;
-        if ($payment->handling_fee_fixed || $payment->handling_fee_percent) {
-            $order->handling_amount = (int) round(($order->total_amount * ($payment->handling_fee_percent / 100)) + $payment->handling_fee_fixed);
+
+        $seconds = max(1, (int) config('api_security.payment_checkout_lock.seconds', 15));
+        $userId = $request->user()?->id ?: 'guest';
+        $lock = Cache::lock("payment:checkout:{$userId}:" . sha1($tradeNo), $seconds);
+
+        if (!$lock->get()) {
+            return false;
         }
-        $order->payment_id = $method;
-        if (!$order->save())
-            return $this->fail([400, __('Request failed, please try again later')]);
-        $result = $paymentService->pay([
-            'trade_no' => $tradeNo,
-            'total_amount' => isset($order->handling_amount) ? ($order->total_amount + $order->handling_amount) : $order->total_amount,
-            'user_id' => $order->user_id,
-            'stripe_token' => $request->input('token')
-        ]);
-        return response([
-            'type' => $result['type'],
-            'data' => $result['data']
-        ]);
+
+        return $lock;
     }
 
     public function check(Request $request)

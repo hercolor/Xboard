@@ -36,4 +36,9 @@ return [
         'server_machine_per_minute' => (int) env('API_RATE_LIMIT_SERVER_MACHINE_PER_MINUTE', 120),
         'callback_per_minute' => (int) env('API_RATE_LIMIT_CALLBACK_PER_MINUTE', 120),
     ],
+
+    'payment_checkout_lock' => [
+        'enabled' => env('API_PAYMENT_CHECKOUT_LOCK_ENABLED', true),
+        'seconds' => (int) env('API_PAYMENT_CHECKOUT_LOCK_SECONDS', 15),
+    ],
 ];

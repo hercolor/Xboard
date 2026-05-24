@@ -235,6 +235,11 @@ Acceptance:
   - Recommended first implementation: short-lived in-flight checkout lock, feature-flagged, without result caching or schema changes.
   - Runtime behavior remains unchanged.
 
+- 2026-05-24: Feature-flagged in-flight checkout lock implemented.
+  - Added short-lived user/order checkout lock around `POST /api/v1/user/order/checkout`.
+  - Duplicate concurrent checkout requests return the existing fail envelope style; provider results are not cached.
+  - Payment callbacks, provider behavior, subscription delivery, and AES remain unchanged.
+
 ## Recommended immediate next task
 
-Implement the feature-flagged in-flight checkout lock only; do not cache provider results or change callbacks.
+Review Phase 6 security hardening wrap-up and decide whether to pause for deployment packaging or continue with AES design only.

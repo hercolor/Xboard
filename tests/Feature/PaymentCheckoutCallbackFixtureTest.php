@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Plugin\HookManager;
 use App\Services\Plugin\PluginManager;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -112,6 +113,43 @@ final class PaymentCheckoutCallbackFixtureTest extends TestCase
         $this->assertSame($payment->id, $order->payment_id);
         $this->assertSame(125, $order->handling_amount);
         $this->assertSame(Order::STATUS_PENDING, $order->status);
+        $releasedLock = Cache::lock($this->checkoutLockKey($user, $order), 15);
+        $this->assertTrue($releasedLock->get());
+        $releasedLock->release();
+    }
+
+    public function test_checkout_in_flight_lock_rejects_duplicate_without_calling_provider(): void
+    {
+        $user = $this->makeUser(['email' => 'fixture-locked-checkout@example.invalid']);
+        $plan = $this->makePlan(['name' => 'Fixture locked checkout plan']);
+        $payment = $this->makePayment();
+        $order = $this->makePendingOrder($user, $plan, [
+            'trade_no' => 'fixture-locked-checkout-order',
+            'total_amount' => 1000,
+        ]);
+        $lock = Cache::lock($this->checkoutLockKey($user, $order), 15);
+        $this->assertTrue($lock->get());
+
+        try {
+            Sanctum::actingAs($user);
+
+            $this->postJson('/api/v1/user/order/checkout', [
+                'trade_no' => $order->trade_no,
+                'method' => $payment->id,
+            ])
+                ->assertStatus(429)
+                ->assertJson([
+                    'status' => 'fail',
+                    'message' => 'Checkout is already processing, please try again later',
+                ]);
+
+            $order->refresh();
+            $this->assertNull($order->payment_id);
+            $this->assertNull($order->handling_amount);
+            $this->assertSame(Order::STATUS_PENDING, $order->status);
+        } finally {
+            $lock->release();
+        }
     }
 
     public function test_callback_success_marks_pending_order_as_processing_and_preserves_success_body(): void
@@ -302,6 +340,11 @@ final class PaymentCheckoutCallbackFixtureTest extends TestCase
             'actual_commission_balance' => null,
             'paid_at' => null,
         ], $overrides));
+    }
+
+    private function checkoutLockKey(User $user, Order $order): string
+    {
+        return "payment:checkout:{$user->id}:" . sha1($order->trade_no);
     }
 
     private function skipIfConfiguredDatabaseDriverIsUnavailable(): void
