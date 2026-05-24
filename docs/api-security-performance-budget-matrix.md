@@ -146,3 +146,38 @@ API_REQUEST_SIZE_CALLBACK_MAX_BYTES=262144
 ### 7.3 Redaction expansion
 
 Admin audit redaction now also covers access/refresh tokens, subscription tokens, node/server/machine tokens, webhook/client secrets, and private keys, including camelCase and dot/hyphen variants.
+
+## 8. Phase 4 public read performance slice
+
+> Date: 2026-05-24
+> Scope: conservative response-speed improvements for public/App read paths.
+> Compatibility rule: headers and server-side caching only; do not change legacy JSON bodies, App BFF envelope shape, raw subscription output, or route auth.
+
+### 8.1 Public read cache headers
+
+| Route | Header profile | Default TTL | Rationale | Rollback |
+| --- | --- | ---: | --- | --- |
+| `GET /api/app/v1/bootstrap` | `bootstrap` | 300s | Static capability metadata; safe for client/CDN reuse. | `API_CACHE_HEADERS_ENABLED=false` or route middleware removal |
+| `GET /api/v1/guest/comm/config` | `guest-config` | 60s | Public app/support/download config changes infrequently; short TTL avoids repeated cold reads. | `API_CACHE_HEADERS_ENABLED=false` or route middleware removal |
+
+Environment overrides:
+
+```env
+API_CACHE_HEADERS_ENABLED=true
+API_CACHE_BOOTSTRAP_MAX_AGE=300
+API_CACHE_GUEST_CONFIG_MAX_AGE=60
+```
+
+### 8.2 App dashboard notices cache
+
+`AppDashboardReadModel` now caches the public notices subset for 60 seconds by default:
+
+```env
+APP_API_DASHBOARD_NOTICES_CACHE_TTL=60
+```
+
+The cache only stores the existing allowlisted notice fields (`id`, `title`, `created_at`, `updated_at`). It falls back to direct database reads if cache access fails.
+
+### 8.3 Config read consolidation
+
+`GET /api/v1/guest/comm/config` now reads its settings through `admin_settings_batch()` so the endpoint has a single setting-load boundary while preserving all existing response fields and APP aliases.

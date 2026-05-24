@@ -8,7 +8,7 @@ use App\Http\Controllers\App\V1\SessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/bootstrap', BootstrapController::class)
-    ->middleware(['throttle:app-read', 'api.request_size:app'])
+    ->middleware(['throttle:app-read', 'api.request_size:app', 'api.cache_headers:bootstrap'])
     ->name('app-api.bootstrap');
 Route::get('/session', SessionController::class)
     ->middleware(['user', 'throttle:app-read', 'api.request_size:app'])

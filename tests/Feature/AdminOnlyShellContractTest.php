@@ -65,6 +65,7 @@ final class AdminOnlyShellContractTest extends TestCase
                 'support_contact_url' => 'https://support.example.invalid/contact',
                 'support_group_label' => 'Group',
                 'support_group_url' => 'https://support.example.invalid/group',
+                'telegram_discuss_link' => 'https://support.example.invalid/telegram',
                 'windows_download_url' => 'https://download.example.invalid/windows.exe',
                 'macos_download_url' => 'https://download.example.invalid/macos.dmg',
                 'android_download_url' => 'https://download.example.invalid/android.apk',
@@ -77,6 +78,18 @@ final class AdminOnlyShellContractTest extends TestCase
             public function get(string $key, mixed $default = null): mixed
             {
                 return $this->settings[strtolower($key)] ?? $default;
+            }
+
+            public function getBatch(array $keys): array
+            {
+                $result = [];
+
+                foreach ($keys as $index => $item) {
+                    $key = strtolower(is_numeric($index) ? $item : $index);
+                    $result[$key] = $this->get($key, is_numeric($index) ? null : $item);
+                }
+
+                return $result;
             }
         });
 

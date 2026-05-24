@@ -10,6 +10,8 @@ use App\Models\Ticket;
 use App\Models\User;
 use DateTimeInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 final class AppDashboardReadModel
 {
@@ -120,6 +122,24 @@ final class AppDashboardReadModel
      * @return array<int, array<string, mixed>>
      */
     private function notices(): array
+    {
+        $ttl = (int) config('api_performance.app_dashboard.notices_cache_ttl', 60);
+
+        if ($ttl <= 0) {
+            return $this->noticesFromDatabase();
+        }
+
+        try {
+            return Cache::remember('app_api:v1:dashboard:notices', $ttl, fn (): array => $this->noticesFromDatabase());
+        } catch (Throwable) {
+            return $this->noticesFromDatabase();
+        }
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function noticesFromDatabase(): array
     {
         return Notice::query()
             ->where('show', true)

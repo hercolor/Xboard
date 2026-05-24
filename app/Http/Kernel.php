@@ -78,6 +78,7 @@ class Kernel extends HttpKernel
         'staff' => \App\Http\Middleware\Staff::class,
         'log' => \App\Http\Middleware\RequestLog::class,
         'api.request_size' => \App\Http\Middleware\ApiRequestSizeGuard::class,
+        'api.cache_headers' => \App\Http\Middleware\ApiCacheHeaders::class,
         'server' => \App\Http\Middleware\Server::class,
         'server.v2' => \App\Http\Middleware\ServerV2::class,
         'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,

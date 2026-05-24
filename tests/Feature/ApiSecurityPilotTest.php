@@ -90,6 +90,7 @@ final class ApiSecurityPilotTest extends TestCase
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/bootstrap', AppApiResponseBoundary::class);
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/bootstrap', 'throttle:app-read');
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/bootstrap', 'api.request_size:app');
+        $this->assertRouteContainsMiddleware('GET', 'api/app/v1/bootstrap', 'api.cache_headers:bootstrap');
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/session', 'user');
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/session', 'throttle:app-read');
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/dashboard', 'user');
@@ -104,6 +105,7 @@ final class ApiSecurityPilotTest extends TestCase
             ['GET', "api/v2/{$securePath}/auth/me", 'api.request_size:admin'],
             ['GET', "api/v2/{$securePath}/config/fetch", 'throttle:admin-api'],
             ['GET', "api/v2/{$securePath}/config/fetch", 'api.request_size:admin'],
+            ['GET', 'api/v1/guest/comm/config', 'api.cache_headers:guest-config'],
             ['GET', 'api/v1/client/subscribe', 'throttle:subscription'],
             ['GET', admin_setting('subscribe_path', 's') . '/{token}', 'throttle:subscription'],
             ['GET', 'api/v1/guest/payment/notify/{method}/{uuid}', 'throttle:callback'],
@@ -133,6 +135,38 @@ final class ApiSecurityPilotTest extends TestCase
             ->assertOk()
             ->assertHeader('X-Request-Id', 'security-phase3-trace')
             ->assertJsonPath('meta.trace_id', 'security-phase3-trace');
+    }
+
+    public function test_public_read_cache_header_middleware_is_short_ttl_and_disableable(): void
+    {
+        config([
+            'api_performance.cache_headers.enabled' => true,
+            'api_performance.cache_headers.bootstrap_max_age' => 30,
+        ]);
+
+        RouteFacade::get('/api/cache-header-test', fn() => response()->json(['ok' => true]))
+            ->middleware(['api', 'api.cache_headers:bootstrap']);
+
+        $cacheResponse = $this->getJson('/api/cache-header-test')
+            ->assertOk()
+            ->assertHeader('Vary', 'Accept');
+
+        $this->assertStringContainsString('public', $cacheResponse->headers->get('Cache-Control', ''));
+        $this->assertStringContainsString('max-age=30', $cacheResponse->headers->get('Cache-Control', ''));
+        $this->assertStringContainsString('stale-while-revalidate=30', $cacheResponse->headers->get('Cache-Control', ''));
+
+        config(['api_performance.cache_headers.enabled' => false]);
+
+        RouteFacade::get('/api/cache-header-disabled-test', fn() => response()->json(['ok' => true]))
+            ->middleware(['api', 'api.cache_headers:bootstrap']);
+
+        $disabledResponse = $this->getJson('/api/cache-header-disabled-test')
+            ->assertOk();
+
+        $this->assertStringNotContainsString(
+            'public, max-age=',
+            $disabledResponse->headers->get('Cache-Control', '')
+        );
     }
 
     public function test_api_request_size_guard_rejects_oversized_bodies_without_changing_normal_responses(): void

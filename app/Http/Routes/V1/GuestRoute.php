@@ -21,7 +21,7 @@ class GuestRoute
             // Payment
             $router->match(['get', 'post'], '/payment/notify/{method}/{uuid}', [PaymentController::class, 'notify'])->middleware(['throttle:callback', 'api.request_size:callback']);
             // Comm
-            $router->get('/comm/config', [CommController::class, 'config']);
+            $router->get('/comm/config', [CommController::class, 'config'])->middleware('api.cache_headers:guest-config');
         });
     }
 }
