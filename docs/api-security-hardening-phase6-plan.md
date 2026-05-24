@@ -216,6 +216,11 @@ Acceptance:
   - Added `BTCPay` raw-body HMAC success/failure, trimmed-payload signing, and invoice lookup seam tests.
   - Production checkout/callback/provider behavior remains unchanged.
 
+- 2026-05-24: Payment fixture coverage summarized and first production hardening slice planned.
+  - Artifact: `docs/api-payment-fixture-wrap-up-and-hardening-plan.md`.
+  - Recommended first behavior-compatible production slice: dedicated `payment-checkout` limiter on authenticated checkout only.
+  - Runtime behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Summarize payment fixture coverage and plan the first production hardening slice; do not change checkout/callback behavior until that plan is written.
+Implement the dedicated `payment-checkout` limiter on authenticated checkout only; do not alter callback behavior or response shapes.
