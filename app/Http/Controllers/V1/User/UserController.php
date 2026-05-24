@@ -6,15 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\UserChangePassword;
 use App\Http\Requests\User\UserTransfer;
 use App\Http\Requests\User\UserUpdate;
-use App\Models\Order;
 use App\Models\Plan;
-use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Auth\LoginService;
 use App\Services\AuthService;
 use App\Services\Plugin\HookManager;
 use App\Services\UserService;
 use App\Services\User\LegacyUserInfoReadModel;
+use App\Services\User\LegacyUserStatReadModel;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
@@ -95,19 +94,9 @@ class UserController extends Controller
         return $this->success($user);
     }
 
-    public function getStat(Request $request)
+    public function getStat(Request $request, LegacyUserStatReadModel $readModel)
     {
-        $stat = [
-            Order::where('status', 0)
-                ->where('user_id', $request->user()->id)
-                ->count(),
-            Ticket::where('status', 0)
-                ->where('user_id', $request->user()->id)
-                ->count(),
-            User::where('invite_user_id', $request->user()->id)
-                ->count()
-        ];
-        return $this->success($stat);
+        return $this->success($readModel->forUserId((int) $request->user()->id));
     }
 
     public function getSubscribe(Request $request)

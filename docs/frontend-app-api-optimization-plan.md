@@ -288,6 +288,11 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Optimized `PlanService::getAvailablePlans()` to preload active user counts with the plan list query instead of running per-plan capacity count queries.
   - Kept `PlanResource`, guest/user plan fetch routes, purchase validation, subscription delivery, and legacy API payload shapes unchanged.
   - Added regression tests for preloaded capacity counts without requiring a database fallback.
+- 2026-05-24: Phase 5 user homepage counter slice completed.
+  - Extracted legacy `/api/v1/user/getStat` into `App\Services\User\LegacyUserStatReadModel`.
+  - Preserved the legacy positional array `[pending_order_count, open_ticket_count, invited_user_count]`.
+  - Collapsed the controller's three separate count calls behind one read-model query entry using subselects.
+  - Added route/runtime smoke coverage for the three-counter array shape.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
@@ -298,5 +303,5 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 Recommended next backend optimization step:
 
 ```text
-Audit the next read-heavy frontend/App API hotspot, likely user dashboard counters or support/ticket reads, and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
+Audit the next read-heavy frontend/App API hotspot, likely support/ticket detail reads or invite/commission reads, and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
 ```

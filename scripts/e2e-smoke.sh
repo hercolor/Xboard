@@ -271,6 +271,16 @@ code="$(get_auth "$BASE_URL/api/v1/user/info" "$member_auth")"
 assert_code 200 "$code" "V1 user/info"
 assert_json_path /tmp/e2e-body.$$ status success "V1 user/info JSON status"
 
+code="$(get_auth "$BASE_URL/api/v1/user/getStat" "$member_auth")"
+assert_code 200 "$code" "V1 user/getStat"
+assert_json_path /tmp/e2e-body.$$ status success "V1 user/getStat JSON status"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 user/getStat did not keep legacy three-counter array"
+import json, sys
+data = json.load(open(sys.argv[1]))['data']
+if not isinstance(data, list) or len(data) != 3 or any(not isinstance(item, int) for item in data):
+    raise SystemExit(data)
+PY
+
 code="$(get_auth "$BASE_URL/api/app/v1/session" "$member_auth")"
 assert_code 200 "$code" "App API session"
 assert_json_path /tmp/e2e-body.$$ ok true "App API session ok"
