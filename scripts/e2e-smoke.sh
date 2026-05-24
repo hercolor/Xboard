@@ -33,6 +33,7 @@ use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
+use App\Models\StatUser;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
@@ -51,6 +52,7 @@ if ($userIds) {
         Ticket::whereIn('id', $ticketIds)->delete();
     }
     InviteCode::whereIn('user_id', $userIds)->delete();
+    StatUser::whereIn('user_id', $userIds)->delete();
     Order::whereIn('user_id', $userIds)->delete();
     User::whereIn('id', $userIds)->delete();
 }
@@ -83,6 +85,7 @@ use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
+use App\Models\StatUser;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -142,6 +145,15 @@ $admin = User::create([
     'is_admin' => 1,
     'remind_expire' => 1,
     'remind_traffic' => 1,
+]);
+
+StatUser::create([
+    'user_id' => $member->id,
+    'server_rate' => 1.0,
+    'u' => 1234,
+    'd' => 5678,
+    'record_type' => 'd',
+    'record_at' => $now,
 ]);
 
 $server = Server::create([
@@ -338,6 +350,20 @@ import json, sys
 data = json.load(open(sys.argv[1]))['data']
 if not isinstance(data, list) or len(data) != 3 or any(not isinstance(item, int) for item in data):
     raise SystemExit(data)
+PY
+
+code="$(get_auth "$BASE_URL/api/v1/user/stat/getTrafficLog" "$member_auth")"
+assert_code 200 "$code" "V1 stat/getTrafficLog"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 stat/getTrafficLog did not keep traffic resource contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+items = payload.get('data')
+if payload.get('status') != 'success' or not isinstance(items, list) or not items:
+    raise SystemExit(payload)
+first = items[0]
+for key in ('d', 'u', 'record_at', 'server_rate'):
+    if key not in first:
+        raise SystemExit(f'missing {key}: {first}')
 PY
 
 code="$(get_auth "$BASE_URL/api/app/v1/session" "$member_auth")"
