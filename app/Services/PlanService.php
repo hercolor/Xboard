@@ -26,6 +26,14 @@ class PlanService
     {
         return Plan::where('show', true)
             ->where('sell', true)
+            ->withCount([
+                'users as active_users_count' => function ($query) {
+                    $query->where(function ($query) {
+                        $query->where('expired_at', '>=', time())
+                            ->orWhereNull('expired_at');
+                    });
+                },
+            ])
             ->orderBy('sort')
             ->get()
             ->filter(function ($plan) {
@@ -168,12 +176,14 @@ class PlanService
             return true;
         }
 
-        $activeUserCount = User::where('plan_id', $plan->id)
-            ->where(function ($query) {
-                $query->where('expired_at', '>=', time())
-                    ->orWhereNull('expired_at');
-            })
-            ->count();
+        $activeUserCount = array_key_exists('active_users_count', $plan->getAttributes())
+            ? (int) $plan->getAttribute('active_users_count')
+            : User::where('plan_id', $plan->id)
+                ->where(function ($query) {
+                    $query->where('expired_at', '>=', time())
+                        ->orWhereNull('expired_at');
+                })
+                ->count();
 
         return ($plan->capacity_limit - $activeUserCount) > 0;
     }
