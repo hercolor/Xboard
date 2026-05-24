@@ -27,23 +27,23 @@ class UserRoute
             // User
             $router->get('/resetSecurity', [UserController::class, 'resetSecurity']);
             $router->get('/info', [UserController::class, 'info'])->middleware('throttle:user-read');
-            $router->post('/changePassword', [UserController::class, 'changePassword']);
-            $router->post('/update', [UserController::class, 'update']);
+            $router->post('/changePassword', [UserController::class, 'changePassword'])->middleware('throttle:user-mutation');
+            $router->post('/update', [UserController::class, 'update'])->middleware('throttle:user-mutation');
             $router->get('/getSubscribe', [UserController::class, 'getSubscribe']);
             $router->get('/getStat', [UserController::class, 'getStat'])->middleware('throttle:user-read');
             $router->get('/checkLogin', [UserController::class, 'checkLogin']);
-            $router->post('/transfer', [UserController::class, 'transfer']);
-            $router->post('/getQuickLoginUrl', [UserController::class, 'getQuickLoginUrl']);
+            $router->post('/transfer', [UserController::class, 'transfer'])->middleware('throttle:user-mutation');
+            $router->post('/getQuickLoginUrl', [UserController::class, 'getQuickLoginUrl'])->middleware('throttle:user-mutation');
             $router->get('/getActiveSession', [UserController::class, 'getActiveSession']);
-            $router->post('/removeActiveSession', [UserController::class, 'removeActiveSession']);
+            $router->post('/removeActiveSession', [UserController::class, 'removeActiveSession'])->middleware('throttle:user-mutation');
             // Order
-            $router->post('/order/save', [OrderController::class, 'save']);
+            $router->post('/order/save', [OrderController::class, 'save'])->middleware('throttle:user-mutation');
             $router->post('/order/checkout', [OrderController::class, 'checkout']);
             $router->get('/order/check', [OrderController::class, 'check']);
             $router->get('/order/detail', [OrderController::class, 'detail'])->middleware('throttle:user-read');
             $router->get('/order/fetch', [OrderController::class, 'fetch'])->middleware('throttle:user-read');
             $router->get('/order/getPaymentMethod', [OrderController::class, 'getPaymentMethod'])->middleware('throttle:user-read');
-            $router->post('/order/cancel', [OrderController::class, 'cancel']);
+            $router->post('/order/cancel', [OrderController::class, 'cancel'])->middleware('throttle:user-mutation');
             // Plan
             $router->get('/plan/fetch', [PlanController::class, 'fetch'])->middleware('throttle:user-read');
             // Invite
@@ -53,18 +53,18 @@ class UserRoute
             // Notice
             $router->get('/notice/fetch', [NoticeController::class, 'fetch'])->middleware('throttle:user-read');
             // Ticket
-            $router->post('/ticket/reply', [TicketController::class, 'reply']);
-            $router->post('/ticket/close', [TicketController::class, 'close']);
-            $router->post('/ticket/save', [TicketController::class, 'save']);
+            $router->post('/ticket/reply', [TicketController::class, 'reply'])->middleware('throttle:user-mutation');
+            $router->post('/ticket/close', [TicketController::class, 'close'])->middleware('throttle:user-mutation');
+            $router->post('/ticket/save', [TicketController::class, 'save'])->middleware('throttle:user-mutation');
             $router->get('/ticket/fetch', [TicketController::class, 'fetch'])->middleware('throttle:user-read');
-            $router->post('/ticket/withdraw', [TicketController::class, 'withdraw']);
+            $router->post('/ticket/withdraw', [TicketController::class, 'withdraw'])->middleware('throttle:user-mutation');
             // Server
             $router->get('/server/fetch', [ServerController::class, 'fetch']);
             // Coupon
-            $router->post('/coupon/check', [CouponController::class, 'check']);
+            $router->post('/coupon/check', [CouponController::class, 'check'])->middleware('throttle:user-mutation');
             // Gift Card
-            $router->post('/gift-card/check', [GiftCardController::class, 'check']);
-            $router->post('/gift-card/redeem', [GiftCardController::class, 'redeem']);
+            $router->post('/gift-card/check', [GiftCardController::class, 'check'])->middleware('throttle:user-mutation');
+            $router->post('/gift-card/redeem', [GiftCardController::class, 'redeem'])->middleware('throttle:user-mutation');
             $router->get('/gift-card/history', [GiftCardController::class, 'history']);
             $router->get('/gift-card/detail', [GiftCardController::class, 'detail']);
             $router->get('/gift-card/types', [GiftCardController::class, 'types']);

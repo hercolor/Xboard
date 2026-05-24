@@ -171,6 +171,11 @@ Acceptance:
   - Added scoped limiters for register, forget, and passport quick-login URL; reused `passport-email` for login-with-mail-link.
   - `token2Login`, authenticated user quick-login, subscription delivery, callbacks, checkout, and AES remain unchanged.
 
+- 2026-05-24: User mutation throttle policy implemented.
+  - Artifact: `docs/api-user-mutation-throttle-policy.md`.
+  - Added `user-mutation` limiter and applied it to account/session, non-checkout order, ticket, coupon, and gift-card mutation routes.
+  - Checkout, side-effect GETs, Stripe public-key lookup, subscription delivery, callbacks, server/node routes, and AES remain unchanged.
+
 ## Recommended immediate next task
 
-Plan the next Phase 6 hardening slice before code: design a user-mutation throttle policy for tickets, coupons/gift-cards, transfer, profile/password updates, and non-checkout order mutations. Do not touch subscription delivery, server/node payloads, checkout, callbacks, or AES without a dedicated plan and fixtures.
+Plan side-effect GET retirement before code: add POST aliases for `resetSecurity` and `invite/save` while keeping legacy GET compatibility. Do not remove GET routes or change response shapes without DK_Theme/hiddify-app migration evidence.

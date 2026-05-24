@@ -187,6 +187,17 @@ class RouteServiceProvider extends ServiceProvider
                 ->by($request->ip() . '|user|' . $userId);
         });
 
+        RateLimiter::for('user-mutation', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $userId = $request->user()?->id ?: 'guest';
+
+            return Limit::perMinute((int) config('api_security.rate_limits.user_mutation_per_minute', 60))
+                ->by($request->ip() . '|user-mutation|' . $userId);
+        });
+
         RateLimiter::for('app-read', function (Request $request) {
             if (!$this->apiRateLimitsEnabled()) {
                 return Limit::none();
