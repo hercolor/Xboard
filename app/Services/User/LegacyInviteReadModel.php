@@ -22,6 +22,41 @@ final class LegacyInviteReadModel
         'updated_at',
     ];
 
+    public const DETAIL_COLUMNS = [
+        'id',
+        'order_amount',
+        'trade_no',
+        'get_amount',
+        'created_at',
+    ];
+
+    /**
+     * Preserve legacy `/api/v1/user/invite/details` raw response data.
+     *
+     * @return array{data: mixed, total: int}
+     */
+    public function detailsForUser(int $userId, int|string|null $current, int|string|null $pageSize): array
+    {
+        $current = $current ?: 1;
+        $pageSize = $pageSize >= 10 ? $pageSize : 10;
+
+        $baseQuery = CommissionLog::query()
+            ->where('invite_user_id', $userId)
+            ->where('get_amount', '>', 0);
+
+        $total = (clone $baseQuery)->count();
+        $details = $baseQuery
+            ->select(self::DETAIL_COLUMNS)
+            ->orderBy('created_at', 'DESC')
+            ->forPage($current, $pageSize)
+            ->get();
+
+        return [
+            'data' => $details,
+            'total' => (int) $total,
+        ];
+    }
+
     /**
      * Preserve legacy `/api/v1/user/invite/fetch` data contract:
      * `codes` resource collection and `stat` positional array.

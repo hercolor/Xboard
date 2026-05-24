@@ -27,6 +27,16 @@ final class LegacyInviteFetchContractTest extends TestCase
             'created_at',
             'updated_at',
         ], LegacyInviteReadModel::CODE_COLUMNS);
+        $this->assertSame([
+            'id',
+            'order_amount',
+            'trade_no',
+            'get_amount',
+            'created_at',
+        ], LegacyInviteReadModel::DETAIL_COLUMNS);
+        $this->assertStringContainsString('detailsForUser(', $controllerSource);
+        $this->assertStringContainsString('ComissionLogResource::collection($details[\'data\'])', $controllerSource);
+        $this->assertStringContainsString('select(self::DETAIL_COLUMNS)', $readModelSource);
         $this->assertStringContainsString('selectSub($this->invitedUsersQuery($userId), \'invited_user_count\')', $readModelSource);
         $this->assertStringContainsString('selectSub($this->checkedCommissionQuery($userId), \'checked_commission_balance\')', $readModelSource);
         $this->assertStringContainsString('selectSub($this->uncheckCommissionQuery($userId), \'uncheck_commission_balance\')', $readModelSource);

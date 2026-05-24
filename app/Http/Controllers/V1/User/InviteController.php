@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ComissionLogResource;
 use App\Http\Resources\InviteCodeResource;
-use App\Models\CommissionLog;
 use App\Models\InviteCode;
 use App\Services\User\LegacyInviteReadModel;
 use App\Utils\Helper;
@@ -24,19 +23,17 @@ class InviteController extends Controller
         return $this->success($inviteCode->save());
     }
 
-    public function details(Request $request)
+    public function details(Request $request, LegacyInviteReadModel $readModel)
     {
-        $current = $request->input('current') ? $request->input('current') : 1;
-        $pageSize = $request->input('page_size') >= 10 ? $request->input('page_size') : 10;
-        $builder = CommissionLog::where('invite_user_id', $request->user()->id)
-            ->where('get_amount', '>', 0)
-            ->orderBy('created_at', 'DESC');
-        $total = $builder->count();
-        $details = $builder->forPage($current, $pageSize)
-            ->get();
+        $details = $readModel->detailsForUser(
+            (int) $request->user()->id,
+            $request->input('current'),
+            $request->input('page_size')
+        );
+
         return response([
-            'data' => ComissionLogResource::collection($details),
-            'total' => $total
+            'data' => ComissionLogResource::collection($details['data']),
+            'total' => $details['total']
         ]);
     }
 
