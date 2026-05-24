@@ -195,3 +195,6 @@ Do not start with these production changes. First add the tests that lock curren
 - 2026-05-24: Deterministic real-provider RSA callback fixture added for `AlipayF2F`.
   - Covered RSA2 callback signature success/failure and non-success trade status behavior without network calls.
   - Production `AlipayF2F` plugin behavior unchanged.
+- 2026-05-24: Deterministic real-provider raw-body callback fixture added for `BTCPay`.
+  - Covered raw-body HMAC success/failure, trimmed payload signing behavior, and invoice-detail lookup seam without network calls.
+  - Production `BTCPay` plugin behavior unchanged.

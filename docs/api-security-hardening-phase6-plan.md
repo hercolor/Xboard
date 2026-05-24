@@ -212,6 +212,10 @@ Acceptance:
   - Added `AlipayF2F` RSA2 callback success/failure and non-success trade status tests.
   - Production checkout/callback/provider behavior remains unchanged.
 
+- 2026-05-24: Sixth deterministic real-provider payment callback fixture added.
+  - Added `BTCPay` raw-body HMAC success/failure, trimmed-payload signing, and invoice lookup seam tests.
+  - Production checkout/callback/provider behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Assess `BTCPay` callback fixture seams before changing checkout/callback production behavior.
+Summarize payment fixture coverage and plan the first production hardening slice; do not change checkout/callback behavior until that plan is written.
