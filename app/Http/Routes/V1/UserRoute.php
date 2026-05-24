@@ -45,18 +45,18 @@ class UserRoute
             $router->get('/order/getPaymentMethod', [OrderController::class, 'getPaymentMethod'])->middleware('throttle:user-read');
             $router->post('/order/cancel', [OrderController::class, 'cancel']);
             // Plan
-            $router->get('/plan/fetch', [PlanController::class, 'fetch']);
+            $router->get('/plan/fetch', [PlanController::class, 'fetch'])->middleware('throttle:user-read');
             // Invite
             $router->get('/invite/save', [InviteController::class, 'save']);
-            $router->get('/invite/fetch', [InviteController::class, 'fetch']);
-            $router->get('/invite/details', [InviteController::class, 'details']);
+            $router->get('/invite/fetch', [InviteController::class, 'fetch'])->middleware('throttle:user-read');
+            $router->get('/invite/details', [InviteController::class, 'details'])->middleware('throttle:user-read');
             // Notice
             $router->get('/notice/fetch', [NoticeController::class, 'fetch'])->middleware('throttle:user-read');
             // Ticket
             $router->post('/ticket/reply', [TicketController::class, 'reply']);
             $router->post('/ticket/close', [TicketController::class, 'close']);
             $router->post('/ticket/save', [TicketController::class, 'save']);
-            $router->get('/ticket/fetch', [TicketController::class, 'fetch']);
+            $router->get('/ticket/fetch', [TicketController::class, 'fetch'])->middleware('throttle:user-read');
             $router->post('/ticket/withdraw', [TicketController::class, 'withdraw']);
             // Server
             $router->get('/server/fetch', [ServerController::class, 'fetch']);

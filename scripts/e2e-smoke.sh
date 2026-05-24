@@ -371,6 +371,21 @@ assert_code 200 "$code" "App API session"
 assert_json_path /tmp/e2e-body.$$ ok true "App API session ok"
 assert_json_path /tmp/e2e-body.$$ data.subscription.delivery_available true "App API session subscription delivery flag"
 
+code="$(get_auth "$BASE_URL/api/v1/user/plan/fetch" "$member_auth")"
+assert_code 200 "$code" "V1 user/plan/fetch"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 user/plan/fetch did not keep plan list contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+items = payload.get('data')
+if payload.get('status') != 'success' or not isinstance(items, list):
+    raise SystemExit(payload)
+if items:
+    first = items[0]
+    for key in ('id', 'name', 'transfer_enable', 'device_limit'):
+        if key not in first:
+            raise SystemExit(f'missing {key}: {first}')
+PY
+
 code="$(post_json "$BASE_URL/api/v1/user/ticket/save" '{"subject":"E2E smoke support","level":1,"message":"E2E smoke message"}' "$member_auth")"
 assert_code 200 "$code" "V1 ticket/save"
 assert_json_path /tmp/e2e-body.$$ status success "V1 ticket/save JSON status"

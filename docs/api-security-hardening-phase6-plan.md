@@ -160,6 +160,12 @@ Acceptance:
   - Updated route-middleware contract coverage in `ApiSecurityPilotTest`.
   - Subscription delivery, server/node payloads, checkout, auth mutations, and AES remain unchanged.
 
+- 2026-05-24: Slice 2 second route-middleware batch completed.
+  - Artifact: `docs/api-rate-limit-hardening-slice2-batch2-plan.md`.
+  - Added `throttle:user-read` to V1 plan fetch, invite fetch/details, and ticket fetch.
+  - Added user plan fetch smoke coverage.
+  - Subscription delivery, server/node payloads, checkout, auth mutations, callbacks, and AES remain unchanged.
+
 ## Recommended immediate next task
 
-Plan the next Phase 6 hardening slice before code: either expand `user-read` to invite/ticket/plan reads, or design a separate user-mutation/auth throttle policy. Do not touch subscription delivery, server/node payloads, checkout, callbacks, or AES without a dedicated plan and fixtures.
+Plan the next Phase 6 hardening slice before code: design either a user-mutation throttle policy or an auth-throttle gap policy. Do not touch subscription delivery, server/node payloads, checkout, callbacks, or AES without a dedicated plan and fixtures.
