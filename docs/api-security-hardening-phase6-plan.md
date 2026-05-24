@@ -186,6 +186,11 @@ Acceptance:
   - Added dedicated `payment-config` limiter for V1 Stripe public-key lookup.
   - Checkout execution, payment callbacks, provider configs, response envelopes, subscription delivery, and AES remain unchanged.
 
+- 2026-05-24: Payment checkout/callback fixture coverage planned.
+  - Artifact: `docs/api-payment-checkout-callback-fixture-plan.md`.
+  - Mapped checkout and callback execution boundaries, provider fixture priorities, and the synthetic-provider test seam.
+  - Runtime behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Plan checkout/callback fixture coverage before any payment execution hardening. Do not remove side-effect GET routes or change subscription/payment/server payloads without migration evidence.
+Implement the synthetic payment provider fixture tests first. Do not harden checkout/callback production behavior until those tests pass.
