@@ -189,3 +189,6 @@ Do not start with these production changes. First add the tests that lock curren
 - 2026-05-24: Deterministic real-provider fixture added for `CoinPayments`.
   - Covered completed callback, pending callback provider body, HMAC failure, and deterministic checkout URL generation without network calls.
   - Production `CoinPayments` plugin behavior unchanged.
+- 2026-05-24: Deterministic real-provider raw-body callback fixture added for `Coinbase`.
+  - Covered raw-body HMAC success/failure and exact trimmed payload signing behavior.
+  - Production `Coinbase` plugin behavior unchanged.

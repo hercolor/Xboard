@@ -204,6 +204,10 @@ Acceptance:
   - Added `CoinPayments` completed callback, pending callback, HMAC failure, and checkout URL tests.
   - Production checkout/callback/provider behavior remains unchanged.
 
+- 2026-05-24: Fourth deterministic real-provider payment callback fixture added.
+  - Added `Coinbase` raw-body HMAC success/failure and trimmed-payload signing tests.
+  - Production checkout/callback/provider behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Add `Coinbase` raw-body HMAC callback fixtures before changing checkout/callback production behavior.
+Assess `AlipayF2F` signing fixture feasibility before changing checkout/callback production behavior.
