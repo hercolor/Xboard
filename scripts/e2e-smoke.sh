@@ -28,6 +28,8 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
+use App\Models\Ticket;
+use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +40,11 @@ if ($userIds) {
         ->where('tokenable_type', User::class)
         ->whereIn('tokenable_id', $userIds)
         ->delete();
+    $ticketIds = Ticket::whereIn('user_id', $userIds)->pluck('id')->all();
+    if ($ticketIds) {
+        TicketMessage::whereIn('ticket_id', $ticketIds)->delete();
+        Ticket::whereIn('id', $ticketIds)->delete();
+    }
     User::whereIn('id', $userIds)->delete();
 }
 Server::where('code', 'like', 'xboard-e2e-%')->delete();
@@ -285,6 +292,36 @@ code="$(get_auth "$BASE_URL/api/app/v1/session" "$member_auth")"
 assert_code 200 "$code" "App API session"
 assert_json_path /tmp/e2e-body.$$ ok true "App API session ok"
 assert_json_path /tmp/e2e-body.$$ data.subscription.delivery_available true "App API session subscription delivery flag"
+
+code="$(post_json "$BASE_URL/api/v1/user/ticket/save" '{"subject":"E2E smoke support","level":1,"message":"E2E smoke message"}' "$member_auth")"
+assert_code 200 "$code" "V1 ticket/save"
+assert_json_path /tmp/e2e-body.$$ status success "V1 ticket/save JSON status"
+code="$(get_auth "$BASE_URL/api/v1/user/ticket/fetch" "$member_auth")"
+assert_code 200 "$code" "V1 ticket/fetch list"
+ticket_id="$(python3 - /tmp/e2e-body.$$ <<'PY'
+import json, sys
+items = json.load(open(sys.argv[1]))['data']
+if not items:
+    raise SystemExit('missing ticket')
+print(items[0]['id'])
+PY
+)"
+code="$(get_auth "$BASE_URL/api/v1/user/ticket/fetch?id=$ticket_id" "$member_auth")"
+assert_code 200 "$code" "V1 ticket/fetch detail"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 ticket/fetch detail did not keep message contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+data = payload['data']
+messages = data.get('message')
+if payload.get('status') != 'success' or not isinstance(messages, list) or not messages:
+    raise SystemExit(payload)
+first = messages[0]
+for key in ('id', 'ticket_id', 'is_me', 'message', 'created_at', 'updated_at'):
+    if key not in first:
+        raise SystemExit(f'missing {key}: {first}')
+if first['is_me'] is not True:
+    raise SystemExit(first)
+PY
 
 code="$(get_auth "$BASE_URL/api/app/v1/dashboard" "$member_auth")"
 assert_code 200 "$code" "App API dashboard"

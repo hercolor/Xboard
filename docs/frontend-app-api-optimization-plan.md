@@ -293,6 +293,11 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Preserved the legacy positional array `[pending_order_count, open_ticket_count, invited_user_count]`.
   - Collapsed the controller's three separate count calls behind one read-model query entry using subselects.
   - Added route/runtime smoke coverage for the three-counter array shape.
+- 2026-05-24: Phase 5 ticket detail read slice completed.
+  - Removed duplicate `message` relation loading from legacy `/api/v1/user/ticket/fetch?id=...`.
+  - Kept `TicketResource` / `MessageResource` response shape unchanged, including `message[]` and `is_me`.
+  - Selected only message columns needed by the legacy resource and pre-attached the ticket relation to avoid per-message lazy relation reads.
+  - Added runtime smoke coverage for ticket create/list/detail message contract.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
@@ -303,5 +308,5 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 Recommended next backend optimization step:
 
 ```text
-Audit the next read-heavy frontend/App API hotspot, likely support/ticket detail reads or invite/commission reads, and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
+Audit the next read-heavy frontend/App API hotspot, likely invite/commission reads or order list/detail reads, and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
 ```

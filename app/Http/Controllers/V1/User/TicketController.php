@@ -13,7 +13,6 @@ use App\Services\TicketService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
 use App\Services\Plugin\HookManager;
-use Illuminate\Support\Facades\Log;
 
 class TicketController extends Controller
 {
@@ -22,14 +21,16 @@ class TicketController extends Controller
         if ($request->input('id')) {
             $ticket = Ticket::where('id', $request->input('id'))
                 ->where('user_id', $request->user()->id)
-                ->first()
-                ->load('message');
+                ->first();
             if (!$ticket) {
                 return $this->fail([400, __('Ticket does not exist')]);
             }
-            $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)->get();
+            $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)
+                ->select(['id', 'ticket_id', 'user_id', 'message', 'created_at', 'updated_at'])
+                ->orderBy('id')
+                ->get();
             $ticket['message']->each(function ($message) use ($ticket) {
-                $message['is_me'] = ($message['user_id'] == $ticket->user_id);
+                $message->setRelation('ticket', $ticket);
             });
             return $this->success(TicketResource::make($ticket)->additional(['message' => true]));
         }
