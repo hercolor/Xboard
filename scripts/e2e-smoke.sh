@@ -25,6 +25,7 @@ require "vendor/autoload.php";
 $app = require "bootstrap/app.php";
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
+use App\Models\InviteCode;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
@@ -45,6 +46,7 @@ if ($userIds) {
         TicketMessage::whereIn('ticket_id', $ticketIds)->delete();
         Ticket::whereIn('id', $ticketIds)->delete();
     }
+    InviteCode::whereIn('user_id', $userIds)->delete();
     User::whereIn('id', $userIds)->delete();
 }
 Server::where('code', 'like', 'xboard-e2e-%')->delete();
@@ -321,6 +323,34 @@ for key in ('id', 'ticket_id', 'is_me', 'message', 'created_at', 'updated_at'):
         raise SystemExit(f'missing {key}: {first}')
 if first['is_me'] is not True:
     raise SystemExit(first)
+PY
+
+code="$(get_auth "$BASE_URL/api/v1/user/invite/save" "$member_auth")"
+assert_code 200 "$code" "V1 invite/save"
+assert_json_path /tmp/e2e-body.$$ status success "V1 invite/save JSON status"
+code="$(get_auth "$BASE_URL/api/v1/user/invite/fetch" "$member_auth")"
+assert_code 200 "$code" "V1 invite/fetch"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 invite/fetch did not keep codes/stat contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+data = payload['data']
+stat = data.get('stat')
+codes = data.get('codes')
+if payload.get('status') != 'success' or not isinstance(stat, list) or len(stat) != 5:
+    raise SystemExit(payload)
+if not isinstance(codes, list) or not codes:
+    raise SystemExit(payload)
+for key in ('user_id', 'code', 'pv', 'status', 'created_at', 'updated_at'):
+    if key not in codes[0]:
+        raise SystemExit(f'missing {key}: {codes[0]}')
+PY
+code="$(get_auth "$BASE_URL/api/v1/user/invite/details" "$member_auth")"
+assert_code 200 "$code" "V1 invite/details"
+python3 - /tmp/e2e-body.$$ <<'PY' || fail "V1 invite/details did not keep raw data/total contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+if 'data' not in payload or 'total' not in payload or not isinstance(payload['data'], list):
+    raise SystemExit(payload)
 PY
 
 code="$(get_auth "$BASE_URL/api/app/v1/dashboard" "$member_auth")"
