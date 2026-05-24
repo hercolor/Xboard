@@ -1,6 +1,6 @@
 # Xboard 自有镜像构建与部署说明
 
-> 更新时间：2026-05-19
+> 更新时间：2026-05-25
 > 范围：只说明如何用自有镜像替代官方镜像；不改变 DK_Theme API 契约，不删除共享 `Passport/User/Guest` 路由，不做 AES 响应加密。
 
 ## 1. 镜像命名
@@ -53,6 +53,94 @@ build-args: |
 ```
 
 所以在 `hercolor/Xboard` 触发构建时，镜像内容来自你的仓库和当前分支，而不是官方 `cedar2025/Xboard`。
+
+
+## 3.1 本地源码镜像打包流程（不依赖远程 clone）
+
+当本地已有未发布到 GitHub Container Registry 的提交时，不要直接使用仓库根目录的默认 `Dockerfile` 做本地发布包，因为默认 `Dockerfile` 会在构建阶段 clone 远程仓库。推荐使用当前 Git HEAD 生成干净 build context，再把源码 `COPY` 到镜像：
+
+```bash
+COMMIT=$(git rev-parse --short=12 HEAD)
+BUILD_DIR="/tmp/xboard-local-build-${COMMIT}-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BUILD_DIR"
+git archive --format=tar HEAD | tar -x -C "$BUILD_DIR"
+
+python3 - <<'PYLOCAL' "$BUILD_DIR/Dockerfile" "$BUILD_DIR/Dockerfile.local"
+from pathlib import Path
+import sys
+src, dst = map(Path, sys.argv[1:3])
+text = src.read_text()
+text = text.replace(
+    "ARG REPO_URL=https://github.com/cedar2025/Xboard\nARG BRANCH_NAME=master\nRUN git clone --depth 1 --branch ${BRANCH_NAME} ${REPO_URL} .",
+    "COPY . /www",
+)
+dst.write_text(text)
+PYLOCAL
+
+docker build -f "$BUILD_DIR/Dockerfile.local" \
+  --label org.opencontainers.image.revision="$COMMIT" \
+  --label org.opencontainers.image.source="https://github.com/hercolor/Xboard" \
+  -t "ghcr.io/hercolor/xboard:phase6-${COMMIT}" \
+  -t "ghcr.io/hercolor/xboard:latest" \
+  "$BUILD_DIR"
+```
+
+如果 Alpine 官方 CDN 在构建时出现 `Operation timed out`，可只在临时 `Dockerfile.local` 顶部加入镜像源切换，不提交业务代码：
+
+```dockerfile
+RUN sed -i 's#https://dl-cdn.alpinelinux.org/alpine#https://mirrors.aliyun.com/alpine#g' /etc/apk/repositories
+```
+
+本地导出给服务器使用：
+
+```bash
+OUT="xboard-hercolor-phase6-${COMMIT}-$(date +%Y%m%d-%H%M%S).tar.gz"
+docker save "ghcr.io/hercolor/xboard:phase6-${COMMIT}" | gzip -c > "$OUT"
+sha256sum "$OUT" > "${OUT}.sha256"
+ln -f "$OUT" xboard-latest.tar.gz
+sha256sum xboard-latest.tar.gz > xboard-latest.tar.gz.sha256
+```
+
+本次已生成并验证：
+
+```text
+镜像: ghcr.io/hercolor/xboard:phase6-1659b25cb5f3
+镜像: ghcr.io/hercolor/xboard:latest
+Image ID: sha256:8fe30e85f3ffc81967afcf3c716bcd612e5c2ed2330cf67c09b09b14130e70e4
+导出包: xboard-hercolor-phase6-1659b25cb5f3-20260525-001826.tar.gz
+SHA256: 7f7fe6066d93a899f8d21c76f821e01f32367e60725436766fabcb719831bc8b
+```
+
+服务器加载：
+
+```bash
+gzip -dc xboard-hercolor-phase6-1659b25cb5f3-20260525-001826.tar.gz | docker load
+# 或者直接使用 latest 导出包
+gzip -dc xboard-latest.tar.gz | docker load
+
+docker images ghcr.io/hercolor/xboard
+```
+
+然后把 Compose 里的镜像改成：
+
+```yaml
+image: ghcr.io/hercolor/xboard:latest
+```
+
+再执行：
+
+```bash
+docker compose up -d
+```
+
+验证容器入口时，可用：
+
+```bash
+docker run --rm --entrypoint sh ghcr.io/hercolor/xboard:phase6-1659b25cb5f3 \
+  -lc 'test -x /entrypoint.sh && php -v && test -f /www/artisan'
+```
+
+注意：当前源码没有 `composer.lock`，镜像构建时 Composer 会解析最新依赖版本。后续如需完全可复现构建，应单独评估是否提交锁文件。
 
 ## 4. 1Panel / Compose 替换方式
 
