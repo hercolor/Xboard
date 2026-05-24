@@ -17,9 +17,9 @@ class GuestRoute
             // Plan
             $router->get('/plan/fetch', [PlanController::class, 'fetch']);
             // Telegram
-            $router->post('/telegram/webhook', [TelegramController::class, 'webhook']);
+            $router->post('/telegram/webhook', [TelegramController::class, 'webhook'])->middleware('throttle:callback');
             // Payment
-            $router->match(['get', 'post'], '/payment/notify/{method}/{uuid}', [PaymentController::class, 'notify']);
+            $router->match(['get', 'post'], '/payment/notify/{method}/{uuid}', [PaymentController::class, 'notify'])->middleware('throttle:callback');
             // Comm
             $router->get('/comm/config', [CommController::class, 'config']);
         });

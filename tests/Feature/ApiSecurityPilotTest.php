@@ -29,7 +29,18 @@ final class ApiSecurityPilotTest extends TestCase
     {
         config(['api_security.rate_limits.enabled' => true]);
 
-        foreach (['passport-login', 'passport-email', 'user-read', 'app-read'] as $name) {
+        foreach ([
+            'passport-login',
+            'passport-email',
+            'user-read',
+            'app-read',
+            'admin-login',
+            'admin-api',
+            'subscription',
+            'server-node',
+            'server-machine',
+            'callback',
+        ] as $name) {
             $limiter = RateLimiter::limiter($name);
             $this->assertNotNull($limiter, sprintf('Expected [%s] limiter to be registered.', $name));
 
@@ -39,11 +50,32 @@ final class ApiSecurityPilotTest extends TestCase
 
         config(['api_security.rate_limits.enabled' => false]);
 
-        $disabledLimit = RateLimiter::limiter('passport-login')(
-            Request::create('/api/security-pilot', 'POST', ['email' => 'pilot@example.invalid'])
-        );
+        foreach ([
+            'passport-login',
+            'passport-email',
+            'user-read',
+            'app-read',
+            'admin-login',
+            'admin-api',
+            'subscription',
+            'server-node',
+            'server-machine',
+            'callback',
+        ] as $name) {
+            $disabledLimit = RateLimiter::limiter($name)(
+                Request::create('/api/security-pilot', 'POST', [
+                    'email' => 'pilot@example.invalid',
+                    'token' => 'secret-token-for-keying',
+                    'node_id' => 1,
+                    'machine_id' => 1,
+                ])
+            );
 
-        $this->assertInstanceOf(Unlimited::class, $disabledLimit);
+            $this->assertInstanceOf(Unlimited::class, $disabledLimit, sprintf(
+                'Expected [%s] limiter to honor API_RATE_LIMITS_ENABLED kill switch.',
+                $name
+            ));
+        }
     }
 
     public function test_rate_limit_pilot_is_route_scoped_not_global(): void
@@ -61,25 +93,25 @@ final class ApiSecurityPilotTest extends TestCase
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/dashboard', 'user');
         $this->assertRouteContainsMiddleware('GET', 'api/app/v1/dashboard', 'throttle:app-read');
 
-        foreach ([
-            ['GET', 'api/v1/client/subscribe'],
-            ['GET', admin_setting('subscribe_path', 's') . '/{token}'],
-            ['GET', 'api/v1/guest/payment/notify/{method}/{uuid}'],
-            ['POST', 'api/v1/guest/payment/notify/{method}/{uuid}'],
-            ['POST', 'api/v1/guest/telegram/webhook'],
-            ['GET', 'api/v2/server/config'],
-            ['POST', 'api/v2/server/report'],
-        ] as [$method, $uri]) {
-            $route = $this->findRoute($method, $uri);
-            $this->assertNotNull($route, sprintf('Expected no-touch route [%s %s] to remain mounted.', $method, $uri));
+        $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
 
-            foreach ($route->gatherMiddleware() as $middleware) {
-                $this->assertFalse(str_starts_with($middleware, 'throttle:'), sprintf(
-                    'No-touch route [%s %s] must stay outside this rate-limit pilot.',
-                    $method,
-                    $uri
-                ));
-            }
+        foreach ([
+            ['POST', "api/v2/{$securePath}/auth/login", 'throttle:admin-login'],
+            ['GET', "api/v2/{$securePath}/auth/me", 'throttle:admin-api'],
+            ['GET', "api/v2/{$securePath}/config/fetch", 'throttle:admin-api'],
+            ['GET', 'api/v1/client/subscribe', 'throttle:subscription'],
+            ['GET', admin_setting('subscribe_path', 's') . '/{token}', 'throttle:subscription'],
+            ['GET', 'api/v1/guest/payment/notify/{method}/{uuid}', 'throttle:callback'],
+            ['POST', 'api/v1/guest/payment/notify/{method}/{uuid}', 'throttle:callback'],
+            ['POST', 'api/v1/guest/telegram/webhook', 'throttle:callback'],
+            ['GET', 'api/v1/server/UniProxy/config', 'throttle:server-node'],
+            ['POST', 'api/v1/server/TrojanTidalab/submit', 'throttle:server-node'],
+            ['GET', 'api/v2/server/config', 'throttle:server-node'],
+            ['POST', 'api/v2/server/report', 'throttle:server-node'],
+            ['POST', 'api/v2/server/machine/nodes', 'throttle:server-machine'],
+            ['POST', 'api/v2/server/machine/status', 'throttle:server-machine'],
+        ] as [$method, $uri, $expectedMiddleware]) {
+            $this->assertRouteContainsMiddleware($method, $uri, $expectedMiddleware);
         }
     }
 

@@ -164,10 +164,92 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute((int) config('api_security.rate_limits.app_read_per_minute', 120))
                 ->by($request->ip() . '|app|' . $userId);
         });
+
+
+        RateLimiter::for('admin-login', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $email = strtolower((string) $request->input('email', 'anonymous'));
+
+            return Limit::perMinute((int) config('api_security.rate_limits.admin_login_per_minute', 10))
+                ->by($request->ip() . '|admin-login|' . $email);
+        });
+
+        RateLimiter::for('admin-api', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $adminId = $request->user()?->id ?: 'guest';
+
+            return Limit::perMinute((int) config('api_security.rate_limits.admin_api_per_minute', 240))
+                ->by($request->ip() . '|admin|' . $adminId);
+        });
+
+        RateLimiter::for('subscription', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $token = $request->input('token', $request->route('token', 'anonymous'));
+
+            return Limit::perMinute((int) config('api_security.rate_limits.subscription_per_minute', 60))
+                ->by($request->ip() . '|subscription|' . $this->rateLimitKeyFragment($token));
+        });
+
+        RateLimiter::for('server-node', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $nodeKey = $request->input('machine_id')
+                ? 'machine:' . $request->input('machine_id')
+                : 'node:' . $request->input('node_id', 'unknown');
+            $token = $request->input('token', 'anonymous');
+
+            return Limit::perMinute((int) config('api_security.rate_limits.server_node_per_minute', 300))
+                ->by($request->ip() . '|server|' . $nodeKey . '|' . $this->rateLimitKeyFragment($token));
+        });
+
+        RateLimiter::for('server-machine', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $machineId = $request->input('machine_id', 'unknown');
+            $token = $request->input('token', 'anonymous');
+
+            return Limit::perMinute((int) config('api_security.rate_limits.server_machine_per_minute', 120))
+                ->by($request->ip() . '|machine|' . $machineId . '|' . $this->rateLimitKeyFragment($token));
+        });
+
+        RateLimiter::for('callback', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $method = (string) $request->route('method', 'generic');
+
+            return Limit::perMinute((int) config('api_security.rate_limits.callback_per_minute', 120))
+                ->by($request->ip() . '|callback|' . $method);
+        });
     }
 
     private function apiRateLimitsEnabled(): bool
     {
         return (bool) config('api_security.rate_limits.enabled', true);
+    }
+
+    private function rateLimitKeyFragment(mixed $value): string
+    {
+        $value = (string) ($value ?? 'anonymous');
+
+        if ($value === '') {
+            return 'anonymous';
+        }
+
+        return sha1($value);
     }
 }

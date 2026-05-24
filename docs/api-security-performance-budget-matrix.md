@@ -73,3 +73,39 @@ Required before completion:
 6. Existing App/Admin/no-touch compatibility tests pass.
 7. Full PHPUnit suite passes.
 8. E2E smoke passes before claiming runtime compatibility.
+
+## 6. Phase 2 scoped channel hardening
+
+> Date: 2026-05-24
+> Scope: additive route-level rate-limit coverage for previously isolated infrastructure channels.
+> Compatibility rule: keep legacy response bodies and raw subscription/protocol outputs unchanged; only add bounded 429 protection when a caller exceeds the configured budget.
+
+### 6.1 Added limiters
+
+| Limiter | Default | Key | Routes | Rollback |
+| --- | --- | --- | --- | --- |
+| `admin-login` | 10/min | IP + normalized email | `POST /api/v2/{secure_path}/auth/login` | `API_RATE_LIMITS_ENABLED=false` or remove route middleware |
+| `admin-api` | 240/min | IP + authenticated admin id | `/api/v2/{secure_path}/auth/me`, `/logout`, and protected admin API group | `API_RATE_LIMITS_ENABLED=false` or remove route middleware |
+| `subscription` | 60/min | IP + SHA1(token) | `/s/{token}`, `/api/v1/client/subscribe` | `API_RATE_LIMITS_ENABLED=false` or remove route middleware |
+| `server-node` | 300/min | IP + node/machine id + SHA1(token) | V1/V2 node server endpoints | `API_RATE_LIMITS_ENABLED=false` or remove route middleware |
+| `server-machine` | 120/min | IP + machine id + SHA1(token) | V2 machine `nodes` and `status` endpoints | `API_RATE_LIMITS_ENABLED=false` or remove route middleware |
+| `callback` | 120/min | IP + callback method | Telegram webhook and payment notify routes | `API_RATE_LIMITS_ENABLED=false` or remove route middleware |
+
+Environment overrides:
+
+```env
+API_RATE_LIMIT_ADMIN_LOGIN_PER_MINUTE=10
+API_RATE_LIMIT_ADMIN_API_PER_MINUTE=240
+API_RATE_LIMIT_SUBSCRIPTION_PER_MINUTE=60
+API_RATE_LIMIT_SERVER_NODE_PER_MINUTE=300
+API_RATE_LIMIT_SERVER_MACHINE_PER_MINUTE=120
+API_RATE_LIMIT_CALLBACK_PER_MINUTE=120
+```
+
+### 6.2 Non-goals preserved
+
+- No AES response wrapping.
+- No App BFF envelope on legacy, subscription, node/server, payment, or Telegram routes.
+- No raw subscription format change.
+- No node/server payload shape change.
+- No payment provider response shape change.
