@@ -174,3 +174,12 @@ Do not start with these production changes. First add the tests that lock curren
 - Existing E2E smoke still passes.
 - Existing subscription and App/DK_Theme APIs remain unchanged.
 - Any discovered provider behavior gap is documented before being fixed.
+
+## Progress
+
+- 2026-05-24: Synthetic provider fixture tests added.
+  - Covered deterministic synthetic checkout payload and synthetic callback success/failure/idempotency contracts.
+  - Production checkout/callback behavior unchanged.
+- 2026-05-24: First deterministic real-provider fixture added for `EPay`.
+  - Covered callback signature success/failure and deterministic signed checkout URL generation without network calls.
+  - Production `EPay` plugin behavior unchanged.

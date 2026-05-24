@@ -191,6 +191,11 @@ Acceptance:
   - Mapped checkout and callback execution boundaries, provider fixture priorities, and the synthetic-provider test seam.
   - Runtime behavior remains unchanged.
 
+- 2026-05-24: Synthetic and first real-provider payment fixtures added.
+  - Added synthetic payment fixture tests for checkout/callback contracts.
+  - Added deterministic `EPay` callback success/failure and signed checkout URL tests.
+  - Production checkout/callback/provider behavior remains unchanged.
+
 ## Recommended immediate next task
 
-After synthetic payment provider fixture tests pass, add the first deterministic real-provider callback fixture (`EPay`) before changing checkout/callback production behavior.
+Add the next deterministic real-provider callback fixture (`MGate`) before changing checkout/callback production behavior.
