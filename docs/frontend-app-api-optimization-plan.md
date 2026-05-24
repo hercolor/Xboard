@@ -317,6 +317,12 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
   - Preserved `KnowledgeResource`, grouped list shape, detail shape, plugin hooks, placeholder replacement, and access filtering behavior.
   - Added source-contract and runtime smoke coverage for category/list/detail knowledge reads.
   - No legacy API shape change, no subscription delivery change, no AES.
+- 2026-05-24: Phase 5 notice fetch read slice completed.
+  - Extracted legacy `/api/v1/user/notice/fetch` into `App\Services\User\LegacyNoticeReadModel`.
+  - Preserved the raw `data` / `total` response shape, fixed page size of 5, current-page fallback, visible-only filter, and sort/id ordering.
+  - Selected only legacy notice response columns instead of loading full rows.
+  - Added source-contract and runtime smoke coverage for the raw notice list contract.
+  - No legacy API shape change, no subscription delivery change, no AES.
 - 2026-05-20: DK_Theme App BFF session adapter consensus plan approved.
   - Planning artifact: `docs/dk-theme-app-bff-session-adapter-plan.md`.
   - Decision: `VITE_ENABLE_APP_BFF` first acts as App session overlay/probe only; legacy `user/info` remains authoritative for `balance`/`commission_balance`, and legacy `getSubscribe` remains authoritative for `subscribe_url`/token.
@@ -327,5 +333,5 @@ Do not modify hiddify-app during the first backend BFF skeleton slice.
 Recommended next backend optimization step:
 
 ```text
-Audit the next read-heavy frontend/App API hotspot, likely legacy `notice/fetch` or `order/getPaymentMethod` reads, and choose one narrow safe slice: preserve legacy API shapes, keep DK_Theme and hiddify-app compatibility, avoid AES/subscription-delivery changes, then add query-budget or cache/read-model improvements with route-contract tests.
+Audit legacy `order/getPaymentMethod` and choose the smallest safe read slice: preserve the existing success envelope and payment-method fields, keep checkout/payment execution untouched, avoid cache invalidation risk unless admin update boundaries are covered, and add contract tests before any optimization.
 ```

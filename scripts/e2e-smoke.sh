@@ -27,6 +27,7 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\InviteCode;
 use App\Models\Knowledge;
+use App\Models\Notice;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Server;
@@ -53,6 +54,7 @@ if ($userIds) {
     User::whereIn('id', $userIds)->delete();
 }
 Knowledge::where('title', 'like', '[e2e]%')->delete();
+Notice::where('title', 'like', '[e2e]%')->delete();
 Server::where('code', 'like', 'xboard-e2e-%')->delete();
 Plan::where('name', 'like', '[e2e]%')->delete();
 ServerGroup::where('name', 'like', '[e2e]%')->delete();
@@ -74,6 +76,7 @@ $app = require "bootstrap/app.php";
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\Knowledge;
+use App\Models\Notice;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\ServerGroup;
@@ -167,6 +170,15 @@ $knowledge = Knowledge::create([
     'sort' => 1,
 ]);
 
+$notice = Notice::create([
+    'title' => '[e2e] Notice ' . $stamp,
+    'content' => 'Notice smoke content',
+    'show' => true,
+    'img_url' => null,
+    'tags' => ['e2e'],
+    'sort' => 1,
+]);
+
 echo json_encode([
     'secure_path' => $securePath,
     'subscribe_path' => $subscribePath ?: 's',
@@ -177,6 +189,7 @@ echo json_encode([
     'member_token' => $member->token,
     'plan_id' => $plan->id,
     'knowledge_id' => $knowledge->id,
+    'notice_id' => $notice->id,
     'register_email' => 'xboard-e2e-register-' . $stamp . '@gmail.com',
     'mail_email' => 'xboard-e2e-mail-' . $stamp . '@gmail.com',
     'forget_email' => $member->email,
@@ -250,6 +263,7 @@ member_email="$(json_get member_email)"
 member_token="$(json_get member_token)"
 plan_id="$(json_get plan_id)"
 knowledge_id="$(json_get knowledge_id)"
+notice_id="$(json_get notice_id)"
 password="$(json_get password)"
 register_email="$(json_get register_email)"
 mail_email="$(json_get mail_email)"
@@ -399,6 +413,24 @@ if payload.get('status') != 'success' or not isinstance(data, dict):
 for key in ('trade_no', 'period', 'plan', 'try_out_plan_id'):
     if key not in data:
         raise SystemExit(f'missing {key}: {data}')
+PY
+
+code="$(get_auth "$BASE_URL/api/v1/user/notice/fetch" "$member_auth")"
+assert_code 200 "$code" "V1 notice/fetch"
+python3 - /tmp/e2e-body.$$ "$notice_id" <<'PY' || fail "V1 notice/fetch did not keep raw data/total contract"
+import json, sys
+payload = json.load(open(sys.argv[1]))
+notice_id = int(sys.argv[2])
+if 'data' not in payload or 'total' not in payload or not isinstance(payload['data'], list):
+    raise SystemExit(payload)
+match = next((item for item in payload['data'] if item.get('id') == notice_id), None)
+if not match:
+    raise SystemExit(payload)
+for key in ('id', 'sort', 'title', 'content', 'show', 'img_url', 'tags', 'created_at', 'updated_at'):
+    if key not in match:
+        raise SystemExit(f'missing {key}: {match}')
+if match.get('title', '').startswith('[e2e]') is not True:
+    raise SystemExit(match)
 PY
 
 code="$(get_auth "$BASE_URL/api/v1/user/knowledge/getCategory?language=en" "$member_auth")"
