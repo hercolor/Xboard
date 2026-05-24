@@ -208,6 +208,10 @@ Acceptance:
   - Added `Coinbase` raw-body HMAC success/failure and trimmed-payload signing tests.
   - Production checkout/callback/provider behavior remains unchanged.
 
+- 2026-05-24: Fifth deterministic real-provider payment callback fixture added.
+  - Added `AlipayF2F` RSA2 callback success/failure and non-success trade status tests.
+  - Production checkout/callback/provider behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Assess `AlipayF2F` signing fixture feasibility before changing checkout/callback production behavior.
+Assess `BTCPay` callback fixture seams before changing checkout/callback production behavior.
