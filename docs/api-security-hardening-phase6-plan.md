@@ -196,6 +196,10 @@ Acceptance:
   - Added deterministic `EPay` callback success/failure and signed checkout URL tests.
   - Production checkout/callback/provider behavior remains unchanged.
 
+- 2026-05-24: Second deterministic real-provider payment callback fixture added.
+  - Added `MGate` callback success/failure and parameter ordering tests.
+  - Production checkout/callback/provider behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Add the next deterministic real-provider callback fixture (`MGate`) before changing checkout/callback production behavior.
+Add `CoinPayments` completed and pending callback fixtures before changing checkout/callback production behavior.

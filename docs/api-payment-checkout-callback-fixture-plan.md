@@ -183,3 +183,6 @@ Do not start with these production changes. First add the tests that lock curren
 - 2026-05-24: First deterministic real-provider fixture added for `EPay`.
   - Covered callback signature success/failure and deterministic signed checkout URL generation without network calls.
   - Production `EPay` plugin behavior unchanged.
+- 2026-05-24: Deterministic real-provider callback fixture added for `MGate`.
+  - Covered callback signature success/failure and parameter-order-independent signature verification.
+  - Production `MGate` plugin behavior unchanged.
