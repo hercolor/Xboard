@@ -230,6 +230,11 @@ Acceptance:
   - Added structured warning logs for callback verification failures without logging raw payload values.
   - Callback responses, provider behavior, subscription delivery, and AES remain unchanged.
 
+- 2026-05-24: Checkout idempotency slice planned.
+  - Artifact: `docs/api-payment-checkout-idempotency-plan.md`.
+  - Recommended first implementation: short-lived in-flight checkout lock, feature-flagged, without result caching or schema changes.
+  - Runtime behavior remains unchanged.
+
 ## Recommended immediate next task
 
-Plan checkout idempotency before changing checkout mutation behavior.
+Implement the feature-flagged in-flight checkout lock only; do not cache provider results or change callbacks.
