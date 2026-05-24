@@ -142,8 +142,14 @@ Acceptance:
 - Explicit opt-in flag and fallback behavior specified.
 - No AES implementation until approved.
 
+## Progress
+
+- 2026-05-24: Slice 0 security baseline matrix completed.
+  - Artifact: `docs/api-security-baseline-matrix.md`.
+  - Runtime behavior unchanged.
+
 ## Recommended immediate next task
 
-Start with **Slice 0 — Security baseline matrix**.
+Start **Slice 1 — Sensitive-field leakage tests**.
 
-Reason: it is read-only, lowers risk for all later security work, and prevents accidental changes to subscription, payment, auth, and client-critical legacy contracts.
+Reason: the baseline shows the riskiest next work is guardrail coverage before changing throttles, side-effect GETs, or response boundaries.
