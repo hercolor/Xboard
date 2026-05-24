@@ -14,7 +14,7 @@ class ServerRoute
     {
         $router->group([
             'prefix' => 'server',
-            'middleware' => ['server.v2', 'throttle:server-node']
+            'middleware' => ['server.v2', 'throttle:server-node', 'api.request_size:server']
         ], function ($route) {
             $route->match(['GET', 'POST'], 'handshake', [ServerController::class, 'handshake']);
             $route->post('report', [ServerController::class, 'report']);
@@ -29,8 +29,8 @@ class ServerRoute
         $router->group([
             'prefix' => 'server/machine',
         ], function ($route) {
-            $route->post('nodes', [MachineController::class, 'nodes'])->middleware('throttle:server-machine');
-            $route->post('status', [MachineController::class, 'status'])->middleware('throttle:server-machine');
+            $route->post('nodes', [MachineController::class, 'nodes'])->middleware(['throttle:server-machine', 'api.request_size:server']);
+            $route->post('status', [MachineController::class, 'status'])->middleware(['throttle:server-machine', 'api.request_size:server']);
         });
     }
 }

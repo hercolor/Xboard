@@ -109,3 +109,40 @@ API_RATE_LIMIT_CALLBACK_PER_MINUTE=120
 - No raw subscription format change.
 - No node/server payload shape change.
 - No payment provider response shape change.
+
+## 7. Phase 3 request-size and trace safety slice
+
+> Date: 2026-05-24
+> Scope: additive request-size guard, API trace header, and broader audit redaction.
+> Compatibility rule: do not change legacy response bodies, raw subscription payloads, node/server payload shapes, or callback controller behavior for normal-sized valid requests.
+
+### 7.1 Request-size budgets
+
+| Channel | Default max bytes | Applied to | Rollback |
+| --- | ---: | --- | --- |
+| `passport` | 65,536 | V1/V2 passport groups and admin login | `API_REQUEST_SIZE_LIMITS_ENABLED=false` or route middleware removal |
+| `app` | 65,536 | `/api/app/v1/*` BFF routes | `API_REQUEST_SIZE_LIMITS_ENABLED=false` or route middleware removal |
+| `admin` | 2,097,152 | protected admin API and admin auth reads | `API_REQUEST_SIZE_LIMITS_ENABLED=false` or route middleware removal |
+| `server` | 1,048,576 | V1/V2 node/server and machine routes | `API_REQUEST_SIZE_LIMITS_ENABLED=false` or route middleware removal |
+| `callback` | 262,144 | payment notify and Telegram webhook | `API_REQUEST_SIZE_LIMITS_ENABLED=false` or route middleware removal |
+
+Environment overrides:
+
+```env
+API_REQUEST_SIZE_LIMITS_ENABLED=true
+API_REQUEST_SIZE_PASSPORT_MAX_BYTES=65536
+API_REQUEST_SIZE_APP_MAX_BYTES=65536
+API_REQUEST_SIZE_ADMIN_MAX_BYTES=2097152
+API_REQUEST_SIZE_SERVER_MAX_BYTES=1048576
+API_REQUEST_SIZE_CALLBACK_MAX_BYTES=262144
+```
+
+### 7.2 Trace header
+
+- API middleware now preserves a safe incoming `X-Request-Id` or generates a UUID.
+- The same trace id is returned as the `X-Request-Id` response header.
+- App BFF envelopes continue to expose `meta.trace_id`; legacy response bodies are unchanged.
+
+### 7.3 Redaction expansion
+
+Admin audit redaction now also covers access/refresh tokens, subscription tokens, node/server/machine tokens, webhook/client secrets, and private keys, including camelCase and dot/hyphen variants.

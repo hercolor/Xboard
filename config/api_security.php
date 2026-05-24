@@ -1,6 +1,19 @@
 <?php
 
 return [
+    'request_size' => [
+        // Narrow request-size guard. This complements PHP post_max_size and is
+        // applied per route/channel so raw protocols and uploads can keep their
+        // own budgets.
+        'enabled' => env('API_REQUEST_SIZE_LIMITS_ENABLED', true),
+        'default_max_bytes' => (int) env('API_REQUEST_SIZE_DEFAULT_MAX_BYTES', 262144),
+        'passport_max_bytes' => (int) env('API_REQUEST_SIZE_PASSPORT_MAX_BYTES', 65536),
+        'app_max_bytes' => (int) env('API_REQUEST_SIZE_APP_MAX_BYTES', 65536),
+        'admin_max_bytes' => (int) env('API_REQUEST_SIZE_ADMIN_MAX_BYTES', 2097152),
+        'server_max_bytes' => (int) env('API_REQUEST_SIZE_SERVER_MAX_BYTES', 1048576),
+        'callback_max_bytes' => (int) env('API_REQUEST_SIZE_CALLBACK_MAX_BYTES', 262144),
+    ],
+
     'rate_limits' => [
         // Narrow pilot kill switch. Keep this enabled by default, but allow
         // operators to disable the route-level pilot without changing routes.

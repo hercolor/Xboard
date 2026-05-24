@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Exceptions\ApiException;
+use App\Http\Middleware\ApiTraceId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -94,7 +95,12 @@ final class AppApiResponseFactory
     private static function traceId(): string
     {
         $request = request();
-        $headerTraceId = $request->headers->get('X-Request-Id');
+        $attributeTraceId = $request->attributes->get(ApiTraceId::ATTRIBUTE);
+        if (is_string($attributeTraceId) && trim($attributeTraceId) !== '') {
+            return trim($attributeTraceId);
+        }
+
+        $headerTraceId = $request->headers->get(ApiTraceId::HEADER);
 
         if (is_string($headerTraceId) && trim($headerTraceId) !== '') {
             return trim($headerTraceId);

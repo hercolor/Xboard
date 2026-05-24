@@ -16,13 +16,28 @@ class RequestLog
         'secret',
         'key',
         'api_key',
+        'access_token',
+        'refresh_token',
         'auth_data',
         'authdata',
         'subscribe_url',
         'subscribeurl',
+        'subscribe_token',
+        'subscribetoken',
         'subscription_url',
         'subscriptionurl',
+        'subscription_token',
+        'subscriptiontoken',
         'authorization',
+        'node_token',
+        'server_token',
+        'machine_token',
+        'webhook_secret',
+        'webhooksecret',
+        'client_secret',
+        'clientsecret',
+        'private_key',
+        'privatekey',
     ];
 
     public function handle($request, Closure $next)
@@ -93,9 +108,12 @@ class RequestLog
         }
 
         return str_contains($normalized, 'password')
+            || str_contains($normalized, 'authorization')
             || str_ends_with($normalized, '_token')
             || str_ends_with($normalized, '_secret')
-            || str_ends_with($normalized, '_key');
+            || str_ends_with($normalized, '_key')
+            || str_ends_with($normalized, '_auth')
+            || str_ends_with($normalized, '_credential');
     }
 
     private function resolveAction(string $path): string

@@ -10,7 +10,8 @@ class PassportRoute
     public function map(Registrar $router)
     {
         $router->group([
-            'prefix' => 'passport'
+            'prefix' => 'passport',
+            'middleware' => 'api.request_size:passport'
         ], function ($router) {
             // Auth
             $router->post('/auth/register', [AuthController::class, 'register']);

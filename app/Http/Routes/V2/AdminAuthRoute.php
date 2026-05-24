@@ -14,10 +14,10 @@ class AdminAuthRoute
         $router->group([
             'prefix' => $prefix . '/auth',
         ], function ($router) {
-            $router->post('/login', [AuthController::class, 'login'])->middleware('throttle:admin-login');
+            $router->post('/login', [AuthController::class, 'login'])->middleware(['throttle:admin-login', 'api.request_size:passport']);
 
             $router->group([
-                'middleware' => ['user', 'admin', 'throttle:admin-api'],
+                'middleware' => ['user', 'admin', 'throttle:admin-api', 'api.request_size:admin'],
             ], function ($router) {
                 $router->get('/me', [AuthController::class, 'me']);
                 $router->post('/logout', [AuthController::class, 'logout']);
