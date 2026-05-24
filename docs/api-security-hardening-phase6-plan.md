@@ -166,6 +166,11 @@ Acceptance:
   - Added user plan fetch smoke coverage.
   - Subscription delivery, server/node payloads, checkout, auth mutations, callbacks, and AES remain unchanged.
 
+- 2026-05-24: Auth throttle gap policy implemented.
+  - Artifact: `docs/api-auth-throttle-gap-policy.md`.
+  - Added scoped limiters for register, forget, and passport quick-login URL; reused `passport-email` for login-with-mail-link.
+  - `token2Login`, authenticated user quick-login, subscription delivery, callbacks, checkout, and AES remain unchanged.
+
 ## Recommended immediate next task
 
-Plan the next Phase 6 hardening slice before code: design either a user-mutation throttle policy or an auth-throttle gap policy. Do not touch subscription delivery, server/node payloads, checkout, callbacks, or AES without a dedicated plan and fixtures.
+Plan the next Phase 6 hardening slice before code: design a user-mutation throttle policy for tickets, coupons/gift-cards, transfer, profile/password updates, and non-checkout order mutations. Do not touch subscription delivery, server/node payloads, checkout, callbacks, or AES without a dedicated plan and fixtures.

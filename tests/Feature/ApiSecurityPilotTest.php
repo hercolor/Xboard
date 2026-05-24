@@ -33,6 +33,9 @@ final class ApiSecurityPilotTest extends TestCase
         foreach ([
             'passport-login',
             'passport-email',
+            'passport-register',
+            'passport-forget',
+            'passport-quick-login',
             'user-read',
             'app-read',
             'admin-login',
@@ -54,6 +57,9 @@ final class ApiSecurityPilotTest extends TestCase
         foreach ([
             'passport-login',
             'passport-email',
+            'passport-register',
+            'passport-forget',
+            'passport-quick-login',
             'user-read',
             'app-read',
             'admin-login',
@@ -82,7 +88,11 @@ final class ApiSecurityPilotTest extends TestCase
     public function test_rate_limit_pilot_is_route_scoped_not_global(): void
     {
         foreach (['v1', 'v2'] as $version) {
+            $this->assertRouteContainsMiddleware('POST', "api/{$version}/passport/auth/register", 'throttle:passport-register');
             $this->assertRouteContainsMiddleware('POST', "api/{$version}/passport/auth/login", 'throttle:passport-login');
+            $this->assertRouteContainsMiddleware('POST', "api/{$version}/passport/auth/forget", 'throttle:passport-forget');
+            $this->assertRouteContainsMiddleware('POST', "api/{$version}/passport/auth/getQuickLoginUrl", 'throttle:passport-quick-login');
+            $this->assertRouteContainsMiddleware('POST', "api/{$version}/passport/auth/loginWithMailLink", 'throttle:passport-email');
             $this->assertRouteContainsMiddleware('POST', "api/{$version}/passport/comm/sendEmailVerify", 'throttle:passport-email');
             $this->assertRouteContainsMiddleware('GET', "api/{$version}/user/info", 'throttle:user-read');
         }

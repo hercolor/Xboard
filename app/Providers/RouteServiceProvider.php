@@ -143,6 +143,39 @@ class RouteServiceProvider extends ServiceProvider
                 ->by($request->ip() . '|email|' . $email);
         });
 
+        RateLimiter::for('passport-register', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $email = strtolower((string) $request->input('email', 'anonymous'));
+
+            return Limit::perMinute((int) config('api_security.rate_limits.passport_register_per_minute', 10))
+                ->by($request->ip() . '|register|' . $email);
+        });
+
+        RateLimiter::for('passport-forget', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $email = strtolower((string) $request->input('email', 'anonymous'));
+
+            return Limit::perMinute((int) config('api_security.rate_limits.passport_forget_per_minute', 10))
+                ->by($request->ip() . '|forget|' . $email);
+        });
+
+        RateLimiter::for('passport-quick-login', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $authorization = $request->input('auth_data') ?? $request->header('authorization', 'anonymous');
+
+            return Limit::perMinute((int) config('api_security.rate_limits.passport_quick_login_per_minute', 30))
+                ->by($request->ip() . '|quick-login|' . $this->rateLimitKeyFragment($authorization));
+        });
+
         RateLimiter::for('user-read', function (Request $request) {
             if (!$this->apiRateLimitsEnabled()) {
                 return Limit::none();
