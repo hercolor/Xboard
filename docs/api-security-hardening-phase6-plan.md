@@ -193,4 +193,4 @@ Acceptance:
 
 ## Recommended immediate next task
 
-Implement the synthetic payment provider fixture tests first. Do not harden checkout/callback production behavior until those tests pass.
+After synthetic payment provider fixture tests pass, add the first deterministic real-provider callback fixture (`EPay`) before changing checkout/callback production behavior.
