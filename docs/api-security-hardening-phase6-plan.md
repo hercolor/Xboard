@@ -246,4 +246,4 @@ Acceptance:
 
 ## Recommended immediate next task
 
-Choose deployment packaging, AES design-only planning, or provider checkout HTTP seams as the next phase.
+If AES is still required, start only with a disabled server skeleton on a new opt-in App/BFF route group; otherwise move to deployment packaging.
