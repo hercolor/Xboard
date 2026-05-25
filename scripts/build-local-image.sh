@@ -17,9 +17,10 @@ Environment:
   OUT=<file.tar.gz>    Export file name when EXPORT_IMAGE=1
   BUILD_DIR=<path>     Temporary clean build context path
   ALPINE_MIRROR_URL    Optional apk mirror, e.g. https://mirrors.aliyun.com/alpine
+  COMPOSER_REPO_PACKAGIST Optional Composer mirror, e.g. https://mirrors.aliyun.com/composer/
 
 Example:
-  ALPINE_MIRROR_URL=https://mirrors.aliyun.com/alpine EXPORT_IMAGE=1 ./scripts/build-local-image.sh
+  ALPINE_MIRROR_URL=https://mirrors.aliyun.com/alpine COMPOSER_REPO_PACKAGIST=https://mirrors.aliyun.com/composer/ EXPORT_IMAGE=1 ./scripts/build-local-image.sh
 HELP
   exit 0
 fi
@@ -31,6 +32,7 @@ BUILD_DIR="${BUILD_DIR:-/tmp/xboard-local-build-${COMMIT}-$(date +%Y%m%d-%H%M%S)
 EXPORT_IMAGE="${EXPORT_IMAGE:-0}"
 ALPINE_MIRROR_URL="${ALPINE_MIRROR_URL:-}"
 SOURCE_LABEL="${SOURCE_LABEL:-https://github.com/hercolor/Xboard}"
+COMPOSER_REPO_PACKAGIST="${COMPOSER_REPO_PACKAGIST:-}"
 
 log() { printf '[build-local-image] %s\n' "$*"; }
 fail() { printf '[build-local-image] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -61,13 +63,14 @@ if [ -f .gitmodules ]; then
 fi
 
 log "generating local-source Dockerfile"
-python3 - "$BUILD_DIR/Dockerfile" "$BUILD_DIR/Dockerfile.local" "$ALPINE_MIRROR_URL" <<'PY'
+python3 - "$BUILD_DIR/Dockerfile" "$BUILD_DIR/Dockerfile.local" "$ALPINE_MIRROR_URL" "$COMPOSER_REPO_PACKAGIST" <<'PY'
 from pathlib import Path
 import re
 import sys
 src = Path(sys.argv[1])
 dst = Path(sys.argv[2])
 mirror = sys.argv[3]
+composer_repo = sys.argv[4]
 text = src.read_text()
 text = re.sub(
     r'\n# Add build arguments\nARG CACHEBUST=1\nARG REPO_URL=.*?\nARG BRANCH_NAME=.*?\n\nRUN echo "Attempting to clone branch:.*?git submodule update --init --recursive --force\n',
@@ -78,6 +81,12 @@ text = re.sub(
 )
 if 'git clone --depth 1' in text and 'COPY . /www' not in text:
     raise SystemExit('failed to replace remote clone block in Dockerfile')
+if composer_repo:
+    text = text.replace(
+        'RUN composer install --no-cache --no-dev --no-security-blocking',
+        'RUN composer config -g repo.packagist composer ' + composer_repo + ' && composer install --no-cache --no-dev --no-security-blocking',
+        1,
+    )
 if mirror:
     text = text.replace(
         'FROM phpswoole/swoole:php8.2-alpine\n',

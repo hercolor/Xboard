@@ -64,6 +64,7 @@ build-args: |
 ```bash
 # 如 Alpine 官方源超时，可带国内镜像源
 ALPINE_MIRROR_URL=https://mirrors.aliyun.com/alpine \
+COMPOSER_REPO_PACKAGIST=https://mirrors.aliyun.com/composer/ \
 EXPORT_IMAGE=1 \
 ./scripts/build-local-image.sh
 ```
@@ -73,16 +74,17 @@ EXPORT_IMAGE=1 \
 1. 用当前 Git HEAD 创建干净 build context；
 2. 逐个把 `.gitmodules` 中的 submodule 内容 archive 到 build context；
 3. 生成临时 `Dockerfile.local`，把默认远程 clone 改成 `COPY . /www`；
-4. 构建：
+4. 可选切换 Alpine 与 Composer 镜像源，降低网络超时概率；
+5. 构建：
    - `ghcr.io/hercolor/xboard:phase6-<commit>`
    - `ghcr.io/hercolor/xboard:latest`
-5. 在镜像内验证：
+6. 在镜像内验证：
    - `/entrypoint.sh` 可执行；
    - `/www/artisan` 存在；
    - `/www/public/assets/admin/manifest.json` 存在；
    - `/www/public/assets/admin/assets/*.js` 存在；
    - `/www/public/assets/admin/assets/*.css` 存在；
-6. `EXPORT_IMAGE=1` 时导出 tar.gz，并更新：
+7. `EXPORT_IMAGE=1` 时导出 tar.gz，并更新：
    - `xboard-latest.tar.gz`
    - `xboard-latest.tar.gz.sha256`
 
