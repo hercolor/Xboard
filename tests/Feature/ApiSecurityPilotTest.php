@@ -175,6 +175,84 @@ final class ApiSecurityPilotTest extends TestCase
         }
     }
 
+    public function test_phase7_cache_header_route_matrix_is_frozen_before_cache_pilot(): void
+    {
+        foreach ([
+            ['GET', 'api/app/v1/bootstrap', 'api.cache_headers:bootstrap'],
+            ['GET', 'api/v1/guest/comm/config', 'api.cache_headers:guest-config'],
+        ] as [$method, $uri, $expectedMiddleware]) {
+            $this->assertRouteContainsMiddleware($method, $uri, $expectedMiddleware);
+        }
+
+        foreach ([
+            // Future cache candidates need exact-body/client-compatibility tests before middleware changes.
+            ['GET', 'api/v1/guest/plan/fetch'],
+            ['GET', 'api/v1/user/comm/config'],
+            ['GET', 'api/app/v1/session'],
+            ['GET', 'api/app/v1/dashboard'],
+            // No-touch protocol/callback/payment/auth surfaces must not receive public cache headers.
+            ['GET', 'api/v1/client/subscribe'],
+            ['GET', admin_setting('subscribe_path', 's') . '/{token}'],
+            ['GET', 'api/v1/guest/payment/notify/{method}/{uuid}'],
+            ['POST', 'api/v1/guest/payment/notify/{method}/{uuid}'],
+            ['POST', 'api/v1/guest/telegram/webhook'],
+            ['GET', 'api/v1/server/UniProxy/config'],
+            ['GET', 'api/v2/server/config'],
+            ['POST', 'api/v2/server/report'],
+            ['POST', 'api/v2/server/machine/nodes'],
+            ['POST', 'api/v2/server/machine/status'],
+            ['POST', 'api/v1/passport/auth/login'],
+            ['POST', 'api/v2/passport/auth/login'],
+            ['GET', 'api/v1/user/order/check'],
+        ] as [$method, $uri]) {
+            $this->assertRouteDoesNotContainMiddlewarePrefix($method, $uri, 'api.cache_headers:');
+        }
+    }
+
+    public function test_phase7_unthrottled_legacy_read_candidates_match_documented_matrix_before_changes(): void
+    {
+        $auditDocument = file_get_contents(base_path('docs/api-cache-field-minimization-phase7-audit.md'));
+        $this->assertIsString($auditDocument);
+
+        foreach ([
+            ['GET', 'api/v1/user/getSubscribe'],
+            ['GET', 'api/v1/user/checkLogin'],
+            ['GET', 'api/v1/user/getActiveSession'],
+            ['GET', 'api/v1/user/server/fetch'],
+            ['GET', 'api/v1/user/gift-card/history'],
+            ['GET', 'api/v1/user/gift-card/detail'],
+            ['GET', 'api/v1/user/gift-card/types'],
+            ['GET', 'api/v1/user/telegram/getBotInfo'],
+            ['GET', 'api/v1/user/comm/config'],
+            ['GET', 'api/v1/user/order/check'],
+        ] as [$method, $uri]) {
+            $this->assertRouteContainsMiddleware($method, $uri, 'user');
+            $this->assertRouteDoesNotContainMiddleware($method, $uri, 'throttle:user-read');
+            $this->assertRouteDoesNotContainMiddleware($method, $uri, AppApiResponseBoundary::class);
+            $this->assertStringContainsString("`{$method} /{$uri}`", $auditDocument);
+        }
+    }
+
+    public function test_phase7_side_effect_get_aliases_are_not_classified_as_read_optimizations(): void
+    {
+        $auditDocument = file_get_contents(base_path('docs/api-cache-field-minimization-phase7-audit.md'));
+        $this->assertIsString($auditDocument);
+
+        foreach ([
+            ['GET', 'api/v1/user/resetSecurity'],
+            ['GET', 'api/v2/user/resetSecurity'],
+            ['GET', 'api/v1/user/invite/save'],
+        ] as [$method, $uri]) {
+            $this->assertRouteContainsMiddleware($method, $uri, 'user');
+            $this->assertRouteDoesNotContainMiddleware($method, $uri, 'throttle:user-read');
+            $this->assertRouteDoesNotContainMiddleware($method, $uri, 'throttle:user-mutation');
+            $this->assertRouteDoesNotContainMiddlewarePrefix($method, $uri, 'api.cache_headers:');
+        }
+
+        $this->assertStringContainsString('`GET /api/v1/user/resetSecurity`', $auditDocument);
+        $this->assertStringContainsString('`GET /api/v1/user/invite/save`', $auditDocument);
+    }
+
     public function test_api_trace_id_header_is_scoped_to_api_responses_and_preserves_safe_client_id(): void
     {
         $this->withHeader('X-Request-Id', 'security-phase3-trace')
@@ -283,6 +361,35 @@ final class ApiSecurityPilotTest extends TestCase
             $uri,
             $expectedMiddleware
         ));
+    }
+
+    private function assertRouteDoesNotContainMiddleware(string $method, string $uri, string $middleware): void
+    {
+        $route = $this->findRoute($method, $uri);
+
+        $this->assertNotNull($route, sprintf('Expected route [%s %s] to be mounted.', $method, $uri));
+        $this->assertNotContains($middleware, $route->gatherMiddleware(), sprintf(
+            'Expected route [%s %s] to avoid middleware [%s].',
+            $method,
+            $uri,
+            $middleware
+        ));
+    }
+
+    private function assertRouteDoesNotContainMiddlewarePrefix(string $method, string $uri, string $middlewarePrefix): void
+    {
+        $route = $this->findRoute($method, $uri);
+
+        $this->assertNotNull($route, sprintf('Expected route [%s %s] to be mounted.', $method, $uri));
+
+        foreach ($route->gatherMiddleware() as $middleware) {
+            $this->assertStringStartsNotWith($middlewarePrefix, $middleware, sprintf(
+                'Expected route [%s %s] to avoid middleware prefix [%s].',
+                $method,
+                $uri,
+                $middlewarePrefix
+            ));
+        }
     }
 
     private function findRoute(string $method, string $uri): ?Route
