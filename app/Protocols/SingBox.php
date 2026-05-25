@@ -128,6 +128,9 @@ class SingBox extends AbstractProtocol
     protected function loadConfig()
     {
         $jsonData = subscribe_template('singbox');
+        if (is_string($jsonData)) {
+            $jsonData = str_replace('$rules_base_url', rtrim(source_base_url(), '/'), $jsonData);
+        }
 
         return is_array($jsonData) ? $jsonData : json_decode($jsonData, true);
     }

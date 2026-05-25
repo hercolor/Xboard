@@ -17,6 +17,23 @@ Route::get('/', function () {
     abort(404);
 });
 
+Route::get('/rules/sing-box/{file}', function (string $file) {
+    if (!in_array($file, ['geosite-cn.srs', 'geoip-cn.srs'], true)) {
+        abort(404);
+    }
+
+    $path = storage_path('app/rules/sing-box/' . $file);
+    if (!is_file($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/octet-stream',
+        'Cache-Control' => 'public, max-age=86400, stale-while-revalidate=604800',
+        'X-Content-Type-Options' => 'nosniff',
+    ]);
+})->where('file', 'geosite-cn\.srs|geoip-cn\.srs')->name('rules.sing-box');
+
 //TODO:: 兼容
 Route::get('/' . admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key')))), function () {
     return view('admin', [
