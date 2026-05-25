@@ -7,6 +7,8 @@ use Illuminate\Support\Arr;
 
 class Helper
 {
+    private const DEFAULT_SUBSCRIBE_FLAG = 'hiddify';
+
     public static function uuidToBase64($uuid, $length)
     {
         return base64_encode(substr($uuid, 0, $length));
@@ -122,7 +124,7 @@ class Helper
 
     public static function getSubscribeUrl(string $token, $subscribeUrl = null)
     {
-        $path = route('client.subscribe', ['token' => $token], false);
+        $path = self::appendDefaultSubscribeFlag(route('client.subscribe', ['token' => $token], false));
         
         if ($subscribeUrl) {
             $finalUrl = rtrim($subscribeUrl, '/') . $path;
@@ -140,6 +142,29 @@ class Helper
         $finalUrl = rtrim($selectedUrl, '/') . $path;
         
         return HookManager::filter('subscribe.url', $finalUrl);
+    }
+
+    private static function appendDefaultSubscribeFlag(string $url): string
+    {
+        $fragment = '';
+        $fragmentPosition = strpos($url, '#');
+        if ($fragmentPosition !== false) {
+            $fragment = substr($url, $fragmentPosition);
+            $url = substr($url, 0, $fragmentPosition);
+        }
+
+        $query = parse_url($url, PHP_URL_QUERY);
+        if (is_string($query)) {
+            parse_str($query, $params);
+            foreach (array_keys($params) as $key) {
+                if (strtolower((string) $key) === 'flag') {
+                    return $url . $fragment;
+                }
+            }
+        }
+
+        $separator = str_contains($url, '?') ? '&' : '?';
+        return $url . $separator . 'flag=' . rawurlencode(self::DEFAULT_SUBSCRIBE_FLAG) . $fragment;
     }
 
     public static function randomPort($range): int {
