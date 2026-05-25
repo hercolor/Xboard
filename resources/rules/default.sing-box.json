@@ -80,7 +80,7 @@
         "servers": [
             {
                 "address": "https://1.1.1.1/dns-query",
-                "detour": "节点选择",
+                "detour": "proxy",
                 "tag": "remote"
             },
             {
@@ -141,11 +141,11 @@
     ],
     "outbounds": [
         {
-            "tag": "节点选择",
+            "tag": "proxy",
             "type": "selector",
-            "default": "自动选择",
+            "default": "auto",
             "outbounds": [
-                "自动选择"
+                "auto"
             ]
         },
         {
@@ -161,7 +161,7 @@
             "type": "dns"
         },
         {
-            "tag": "自动选择",
+            "tag": "auto",
             "type": "urltest",
             "outbounds": []
         }
@@ -179,7 +179,7 @@
             },
             {
                 "clash_mode": "global",
-                "outbound": "节点选择"
+                "outbound": "proxy"
             },
             {
                 "ip_is_private": true,
@@ -248,21 +248,21 @@
                 "outbound": "direct"
             }
         ],
-        "final": "节点选择",
+        "final": "proxy",
         "rule_set": [
             {
                 "tag": "geosite-cn",
                 "type": "remote",
                 "format": "binary",
                 "url": "$rules_base_url/rules/sing-box/geosite-cn.srs",
-                "download_detour": "节点选择"
+                "download_detour": "proxy"
             },
             {
                 "tag": "geoip-cn",
                 "type": "remote",
                 "format": "binary",
                 "url": "$rules_base_url/rules/sing-box/geoip-cn.srs",
-                "download_detour": "节点选择"
+                "download_detour": "proxy"
             }
         ]
     }
