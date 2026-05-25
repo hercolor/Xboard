@@ -55,6 +55,128 @@ build-args: |
 所以在 `hercolor/Xboard` 触发构建时，镜像内容来自你的仓库和当前分支，而不是官方 `cedar2025/Xboard`。
 
 
+## 3.0 常用命令流程：本地打包镜像并部署到服务器
+
+> 推荐以后每次本地改完 Xboard 后，都按本节执行。脚本会自动把 `public/assets/admin` 这类 submodule 静态资源打进镜像，避免服务器镜像缺少 JS/CSS。
+
+### A. 本地构建并导出镜像
+
+在本地 Xboard 仓库执行：
+
+```bash
+cd /home/seven/works/Xboard
+
+# 可选：先确认工作区只包含本次要发布的代码变更
+git status --short
+git log -1 --oneline
+
+# 构建 ghcr.io/hercolor/xboard:<phase-tag> 和 ghcr.io/hercolor/xboard:latest，
+# 同时导出 xboard-latest.tar.gz 与 sha256 校验文件。
+ALPINE_MIRROR_URL=https://mirrors.aliyun.com/alpine \
+COMPOSER_REPO_PACKAGIST=https://mirrors.aliyun.com/composer/ \
+EXPORT_IMAGE=1 \
+./scripts/build-local-image.sh
+```
+
+构建完成后，本地会生成：
+
+```text
+xboard-latest.tar.gz
+xboard-latest.tar.gz.sha256
+xboard-hercolor-<tag>-<timestamp>.tar.gz
+xboard-hercolor-<tag>-<timestamp>.tar.gz.sha256
+```
+
+### B. 本地验证镜像资源是否完整
+
+```bash
+docker run --rm --entrypoint sh ghcr.io/hercolor/xboard:latest -lc '
+  test -x /entrypoint.sh
+  test -f /www/artisan
+  test -f /www/public/assets/admin/manifest.json
+  test -f /www/public/assets/admin/index.html
+  find /www/public/assets/admin/assets -maxdepth 1 -type f -name "*.js" | grep -q .
+  find /www/public/assets/admin/assets -maxdepth 1 -type f -name "*.css" | grep -q .
+  php -v >/dev/null
+'
+```
+
+如果这里失败，不要上传服务器；先修复镜像缺失内容。
+
+### C. 上传到服务器
+
+把下面命令中的服务器地址改成实际服务器：
+
+```bash
+scp xboard-latest.tar.gz xboard-latest.tar.gz.sha256 root@YOUR_SERVER:/root/xboard-image/
+```
+
+### D. 服务器加载镜像
+
+在服务器执行：
+
+```bash
+cd /root/xboard-image
+
+# 校验文件完整性
+sha256sum -c xboard-latest.tar.gz.sha256
+
+# 导入镜像到服务器 Docker
+gzip -dc xboard-latest.tar.gz | docker load
+
+# 确认镜像存在
+docker images ghcr.io/hercolor/xboard
+```
+
+### E. 更新 compose 并重启
+
+确认 `compose.yaml` 使用自有镜像：
+
+```yaml
+services:
+  xboard:
+    image: ghcr.io/hercolor/xboard:latest
+```
+
+然后重启：
+
+```bash
+docker compose up -d
+docker compose ps
+docker compose logs --tail=100 xboard
+```
+
+### F. 服务器基础验收
+
+把 `12345678` 换成实际后台安全路径：
+
+```bash
+curl -i http://127.0.0.1:7001/ | head
+curl -i http://127.0.0.1:7001/12345678 | head
+curl -i http://127.0.0.1:7001/api/v1/guest/comm/config | head
+```
+
+期望：
+
+- `/` 返回 404；
+- 后台安全路径返回 200；
+- `/api/v1/guest/comm/config` 返回 200。
+
+### G. 回滚方式
+
+如果新镜像异常，可以把服务器 `compose.yaml` 的镜像改回上一版 tag，或重新加载上一版 tar 包：
+
+```bash
+gzip -dc xboard-previous.tar.gz | docker load
+docker compose up -d
+```
+
+如果服务器仍保留旧容器镜像，也可以先查看可用镜像：
+
+```bash
+docker images ghcr.io/hercolor/xboard
+```
+
 ## 3.1 本地源码镜像打包流程（包含 submodule assets）
 
 `public/assets/admin` 是 Git submodule，里面包含后台前端的 `manifest.json`、JS、CSS、字体和 locales。只用 `git archive HEAD` 打包主仓库时不会包含 submodule 内容，会导致镜像中 `/www/public/assets/admin/assets/*.js` 和 `*.css` 缺失。
