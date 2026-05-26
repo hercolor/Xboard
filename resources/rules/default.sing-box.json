@@ -171,7 +171,9 @@
         "rules": [
             {
                 "outbound": "dns-out",
-                "protocol": "dns"
+                "protocol": [
+                    "dns"
+                ]
             },
             {
                 "clash_mode": "direct",
