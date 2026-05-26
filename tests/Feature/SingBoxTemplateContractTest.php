@@ -14,6 +14,12 @@ final class SingBoxTemplateContractTest extends TestCase
 
         foreach (['dns', 'route'] as $section) {
             foreach (data_get($template, $section . '.rules', []) as $index => $rule) {
+                $this->assertArrayNotHasKey(
+                    'clash_mode',
+                    $rule,
+                    sprintf('%s.rules[%d].clash_mode is intentionally omitted for 4376 APP import compatibility', $section, $index)
+                );
+
                 $arrayFields = $section === 'dns'
                     ? ['outbound', 'protocol', 'domain_suffix', 'domain_keyword', 'rule_set']
                     : ['protocol', 'domain_suffix', 'domain_keyword', 'rule_set'];
@@ -25,14 +31,7 @@ final class SingBoxTemplateContractTest extends TestCase
 
                     $this->assertIsArray(
                         $rule[$field],
-                        sprintf('%s.rules[%d].%s must be an array for sing-box core import', $section, $index, $field)
-                    );
-                }
-
-                if (array_key_exists('clash_mode', $rule)) {
-                    $this->assertIsString(
-                        $rule['clash_mode'],
-                        sprintf('%s.rules[%d].clash_mode must be a string for sing-box core import', $section, $index)
+                        sprintf('%s.rules[%d].%s must be an array for core import', $section, $index, $field)
                     );
                 }
             }

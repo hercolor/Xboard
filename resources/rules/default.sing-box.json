@@ -8,14 +8,6 @@
                 "server": "local"
             },
             {
-                "clash_mode": "global",
-                "server": "remote"
-            },
-            {
-                "clash_mode": "direct",
-                "server": "local"
-            },
-            {
                 "domain_suffix": [
                     "cn",
                     "qq.com",
@@ -174,14 +166,6 @@
                 "protocol": [
                     "dns"
                 ]
-            },
-            {
-                "clash_mode": "direct",
-                "outbound": "direct"
-            },
-            {
-                "clash_mode": "global",
-                "outbound": "proxy"
             },
             {
                 "ip_is_private": true,
