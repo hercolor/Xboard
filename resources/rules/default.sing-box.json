@@ -8,11 +8,15 @@
                 "server": "local"
             },
             {
-                "clash_mode": "global",
+                "clash_mode": [
+                    "global"
+                ],
                 "server": "remote"
             },
             {
-                "clash_mode": "direct",
+                "clash_mode": [
+                    "direct"
+                ],
                 "server": "local"
             },
             {
@@ -176,11 +180,15 @@
                 ]
             },
             {
-                "clash_mode": "direct",
+                "clash_mode": [
+                    "direct"
+                ],
                 "outbound": "direct"
             },
             {
-                "clash_mode": "global",
+                "clash_mode": [
+                    "global"
+                ],
                 "outbound": "proxy"
             },
             {
