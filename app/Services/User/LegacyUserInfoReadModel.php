@@ -8,6 +8,7 @@ class LegacyUserInfoReadModel
 {
     public const COLUMNS = [
         'email',
+        'phone',
         'transfer_enable',
         'last_login_at',
         'created_at',

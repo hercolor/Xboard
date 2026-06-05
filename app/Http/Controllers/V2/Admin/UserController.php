@@ -225,6 +225,12 @@ class UserController extends Controller
                 return $this->fail([400201, '邮箱已被使用']);
             }
         }
+        if (array_key_exists('phone', $params)) {
+            $params['phone'] = User::normalizePhone($params['phone']);
+            if ($params['phone'] && User::byPhone($params['phone'])->where('id', '!=', $user->id)->exists()) {
+                return $this->fail([400202, '手机号已被使用']);
+            }
+        }
         // 处理密码
         if (isset($params['password'])) {
             $params['password'] = password_hash($params['password'], PASSWORD_DEFAULT);

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id 用户ID
  * @property string $email 邮箱
+ * @property string|null $phone 手机号
  * @property string $password 密码
  * @property string|null $password_algo 加密方式
  * @property string|null $password_salt 加密盐
@@ -90,12 +91,49 @@ class User extends Authenticatable
         );
     }
 
+    protected function phone(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => self::normalizePhone($value),
+        );
+    }
+
+    public static function normalizePhone(mixed $phone): ?string
+    {
+        $value = trim((string) $phone);
+        if ($value === '') {
+            return null;
+        }
+
+        $value = preg_replace('/[\s\-()]/', '', $value) ?: $value;
+        if (str_starts_with($value, '00')) {
+            $value = '+' . substr($value, 2);
+        }
+
+        return $value;
+    }
+
     /**
      * 按邮箱查询（大小写不敏感，兼容所有数据库）
      */
     public function scopeByEmail(Builder $query, string $email): Builder
     {
         return $query->where('email', strtolower(trim($email)));
+    }
+
+    public function scopeByPhone(Builder $query, string $phone): Builder
+    {
+        return $query->where('phone', self::normalizePhone($phone));
+    }
+
+    public function scopeByLoginAccount(Builder $query, string $account): Builder
+    {
+        $value = trim($account);
+        if (str_contains($value, '@')) {
+            return $query->where('email', strtolower($value));
+        }
+
+        return $query->where('phone', self::normalizePhone($value));
     }
 
     // 获取邀请人信息

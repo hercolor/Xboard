@@ -126,10 +126,10 @@ class RouteServiceProvider extends ServiceProvider
                 return Limit::none();
             }
 
-            $email = strtolower((string) $request->input('email', 'anonymous'));
+            $account = strtolower((string) ($request->input('account') ?: $request->input('email', 'anonymous')));
 
             return Limit::perMinute((int) config('api_security.rate_limits.passport_login_per_minute', 20))
-                ->by($request->ip() . '|login|' . $email);
+                ->by($request->ip() . '|login|' . $this->rateLimitKeyFragment($account));
         });
 
         RateLimiter::for('passport-email', function (Request $request) {
@@ -148,10 +148,10 @@ class RouteServiceProvider extends ServiceProvider
                 return Limit::none();
             }
 
-            $email = strtolower((string) $request->input('email', 'anonymous'));
+            $account = strtolower((string) ($request->input('phone') ?: $request->input('email', 'anonymous')));
 
             return Limit::perMinute((int) config('api_security.rate_limits.passport_register_per_minute', 10))
-                ->by($request->ip() . '|register|' . $email);
+                ->by($request->ip() . '|register|' . $this->rateLimitKeyFragment($account));
         });
 
         RateLimiter::for('passport-forget', function (Request $request) {

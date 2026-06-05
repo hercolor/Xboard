@@ -96,6 +96,11 @@ class RegisterService
             return [false, [400201, __('Email already exists')]];
         }
 
+        $phone = User::normalizePhone($request->input('phone'));
+        if ($phone && User::byPhone($phone)->exists()) {
+            return [false, [400202, __('Phone already exists')]];
+        }
+
         return [true, null];
     }
 
@@ -145,6 +150,7 @@ class RegisterService
         HookManager::call('user.register.before', $request);
 
         $email = $request->input('email');
+        $phone = User::normalizePhone($request->input('phone'));
         $password = $request->input('password');
         $inviteCode = $request->input('invite_code');
 
@@ -158,6 +164,7 @@ class RegisterService
         $userService = app(UserService::class);
         $user = $userService->createUser([
             'email' => $email,
+            'phone' => $phone,
             'password' => $password,
             'invite_user_id' => $inviteUserId,
         ]);

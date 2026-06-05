@@ -31,6 +31,8 @@ class AuthService
         return [
             'token' => $this->user->token,
             'auth_data' => $formattedToken,
+            'email' => $this->user->email,
+            'phone' => $this->user->phone,
             'is_admin' => $this->user->is_admin,
         ];
     }
@@ -80,6 +82,7 @@ class AuthService
         return [
             'id' => $user->id,
             'email' => $user->email,
+            'phone' => $user->phone,
             'is_admin' => (bool)$user->is_admin,
             'is_staff' => (bool)$user->is_staff
         ];

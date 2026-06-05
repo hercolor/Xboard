@@ -14,7 +14,8 @@ class AuthLogin extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email:strict',
+            'account' => 'nullable|string|max:128',
+            'email' => 'nullable|email:strict|required_without:account',
             'password' => 'required|min:8'
         ];
     }
@@ -24,6 +25,7 @@ class AuthLogin extends FormRequest
         return [
             'email.required' => __('Email can not be empty'),
             'email.email' => __('Email format is incorrect'),
+            'account.required_without' => __('Account can not be empty'),
             'password.required' => __('Password can not be empty'),
             'password.min' => __('Password must be greater than 8 digits')
         ];

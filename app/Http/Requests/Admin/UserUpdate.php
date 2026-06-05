@@ -16,6 +16,7 @@ class UserUpdate extends FormRequest
         return [
             'id' => 'required|integer',
             'email' => 'email:strict',
+            'phone' => 'nullable|string|max:32|regex:/^\+?[0-9][0-9\s\-()]{5,30}$/',
             'password' => 'nullable|min:8',
             'transfer_enable' => 'numeric',
             'expired_at' => 'nullable|integer',
@@ -41,6 +42,7 @@ class UserUpdate extends FormRequest
         return [
             'email.required' => '邮箱不能为空',
             'email.email' => '邮箱格式不正确',
+            'phone.regex' => '手机号格式不正确',
             'transfer_enable.numeric' => '流量格式不正确',
             'expired_at.integer' => '到期时间格式不正确',
             'banned.in' => '是否封禁格式不正确',

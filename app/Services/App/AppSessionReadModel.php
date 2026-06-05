@@ -44,6 +44,7 @@ final class AppSessionReadModel
         return [
             'id' => $user->id,
             'email' => $user->email,
+            'phone' => $user->phone,
             'avatar_url' => 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon',
             'is_admin' => (bool) $user->is_admin,
             'is_staff' => (bool) $user->is_staff,

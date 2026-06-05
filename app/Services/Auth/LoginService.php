@@ -13,15 +13,21 @@ class LoginService
     /**
      * 处理用户登录
      *
-     * @param string $email 用户邮箱
+     * @param string $account 用户邮箱或手机号
      * @param string $password 用户密码
      * @return array [成功状态, 用户对象或错误信息]
      */
-    public function login(string $email, string $password): array
+    public function login(string $account, string $password): array
     {
+        $account = trim($account);
+        if ($account === '') {
+            return [false, [400, __('Incorrect account or password')]];
+        }
+        $limitKey = str_contains($account, '@') ? strtolower($account) : (User::normalizePhone($account) ?? $account);
+
         // 检查密码错误限制
         if ((int) admin_setting('password_limit_enable', true)) {
-            $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
+            $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $limitKey), 0);
             if ($passwordErrorCount >= (int) admin_setting('password_limit_count', 5)) {
                 return [
                     false,
@@ -36,9 +42,9 @@ class LoginService
         }
 
         // 查找用户
-        $user = User::byEmail($email)->first();
+        $user = User::byLoginAccount($account)->first();
         if (!$user) {
-            return [false, [400, __('Incorrect email or password')]];
+            return [false, [400, __('Incorrect account or password')]];
         }
 
         // 验证密码
@@ -52,14 +58,14 @@ class LoginService
         ) {
             // 增加密码错误计数
             if ((int) admin_setting('password_limit_enable', true)) {
-                $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
+                $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $limitKey), 0);
                 Cache::put(
-                    CacheKey::get('PASSWORD_ERROR_LIMIT', $email),
+                    CacheKey::get('PASSWORD_ERROR_LIMIT', $limitKey),
                     (int) $passwordErrorCount + 1,
                     60 * (int) admin_setting('password_limit_expire', 60)
                 );
             }
-            return [false, [400, __('Incorrect email or password')]];
+            return [false, [400, __('Incorrect account or password')]];
         }
 
         // 检查账户状态

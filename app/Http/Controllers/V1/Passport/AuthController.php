@@ -71,10 +71,10 @@ class AuthController extends Controller
      */
     public function login(AuthLogin $request)
     {
-        $email = $request->input('email');
+        $account = $request->input('account') ?: $request->input('email');
         $password = $request->input('password');
 
-        [$success, $result] = $this->loginService->login($email, $password);
+        [$success, $result] = $this->loginService->login($account, $password);
 
         if (!$success) {
             return $this->fail($result);
