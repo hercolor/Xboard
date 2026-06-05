@@ -160,8 +160,10 @@ class AuthController extends Controller
      */
     public function forget(AuthForget $request)
     {
+        $account = $request->input('account') ?: $request->input('email');
+
         [$success, $result] = $this->loginService->resetPassword(
-            $request->input('email'),
+            $account,
             $request->input('email_code'),
             $request->input('password')
         );

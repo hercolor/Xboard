@@ -14,14 +14,16 @@ class CommSendEmailVerify extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email:strict'
+            'account' => 'nullable|string|max:128',
+            'email' => 'nullable|email:strict|required_without:account'
         ];
     }
 
     public function messages()
     {
         return [
-            'email.required' => __('Email can not be empty'),
+            'account.required_without' => __('Account can not be empty'),
+            'email.required_without' => __('Email can not be empty'),
             'email.email' => __('Email format is incorrect')
         ];
     }

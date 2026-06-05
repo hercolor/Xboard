@@ -25,7 +25,24 @@ class CommController extends Controller
             return $this->fail($captchaError);
         }
 
-        $email = $request->input('email');
+        $account = trim((string) ($request->input('account') ?: $request->input('email')));
+        if ($account === '') {
+            return $this->fail([400, __('Account can not be empty')]);
+        }
+
+        if (str_contains($account, '@')) {
+            $email = strtolower($account);
+        } else {
+            $phone = User::normalizePhone($account);
+            if (!$phone) {
+                return $this->fail([400, __('Phone format is incorrect')]);
+            }
+            $user = User::byPhone($phone)->first();
+            if (!$user) {
+                return $this->fail([400, __('This phone is not registered in the system')]);
+            }
+            $email = $user->email;
+        }
 
         // 检查白名单后缀限制
         if ((int) admin_setting('email_whitelist_enable', 0)) {

@@ -84,15 +84,41 @@ class LoginService
     /**
      * 处理密码重置
      *
-     * @param string $email 用户邮箱
+     * @param string $account 用户邮箱或手机号
      * @param string $emailCode 邮箱验证码
      * @param string $password 新密码
      * @return array [成功状态, 结果或错误信息]
      */
-    public function resetPassword(string $email, string $emailCode, string $password): array
+    public function resetPassword(string $account, string $emailCode, string $password): array
     {
+        $account = trim($account);
+        if ($account === '') {
+            return [false, [400, __('Account can not be empty')]];
+        }
+
+        $user = null;
+        $email = null;
+        $limitAccount = strtolower($account);
+
+        if (str_contains($account, '@')) {
+            $email = strtolower($account);
+            $user = User::byEmail($email)->first();
+        } else {
+            $phone = User::normalizePhone($account);
+            $limitAccount = $phone ?: $account;
+            if (!$phone) {
+                return [false, [400, __('Phone format is incorrect')]];
+            }
+
+            $user = User::byPhone($phone)->first();
+            if (!$user) {
+                return [false, [400, __('This phone is not registered in the system')]];
+            }
+            $email = $user->email;
+        }
+
         // 检查重置请求限制
-        $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $email);
+        $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $limitAccount);
         $forgetRequestLimit = (int) Cache::get($forgetRequestLimitKey);
         if ($forgetRequestLimit >= 3) {
             return [false, [429, __('Reset failed, Please try again later')]];
@@ -105,7 +131,6 @@ class LoginService
         }
 
         // 查找用户
-        $user = User::byEmail($email)->first();
         if (!$user) {
             return [false, [400, __('This email is not registered in the system')]];
         }
