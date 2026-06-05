@@ -16,6 +16,8 @@ class UserRoute
             $router->get('/resetSecurity', [UserController::class, 'resetSecurity']);
             $router->post('/resetSecurity', [UserController::class, 'resetSecurity'])->middleware('throttle:user-mutation');
             $router->get('/info', [UserController::class, 'info'])->middleware('throttle:user-read');
+            $router->post('/phone/sendVerify', [UserController::class, 'sendPhoneVerify'])->middleware('throttle:user-mutation');
+            $router->post('/phone/bind', [UserController::class, 'bindPhone'])->middleware('throttle:user-mutation');
         });
     }
 }

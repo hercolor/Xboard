@@ -30,4 +30,14 @@ return [
         'region' => env('AWS_V2BOARD_REGION', 'us-east-1'),
     ],
 
+    'smsbao' => [
+        'enabled' => env('SMSBAO_ENABLED', true),
+        'api_url' => env('SMSBAO_API_URL', 'https://api.smsbao.com/sms'),
+        'username' => env('SMSBAO_USERNAME'),
+        'password' => env('SMSBAO_PASSWORD'),
+        'password_md5' => env('SMSBAO_PASSWORD_MD5'),
+        'sign' => env('SMSBAO_SIGN'),
+        'template' => env('SMSBAO_TEMPLATE', '您的验证码是 {code}，5分钟内有效。如非本人操作，请忽略。'),
+    ],
+
 ];

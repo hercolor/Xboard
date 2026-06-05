@@ -21,6 +21,7 @@ return [
 
         'passport_login_per_minute' => (int) env('API_RATE_LIMIT_PASSPORT_LOGIN_PER_MINUTE', 20),
         'passport_email_per_minute' => (int) env('API_RATE_LIMIT_PASSPORT_EMAIL_PER_MINUTE', 3),
+        'passport_phone_per_minute' => (int) env('API_RATE_LIMIT_PASSPORT_PHONE_PER_MINUTE', 3),
         'passport_register_per_minute' => (int) env('API_RATE_LIMIT_PASSPORT_REGISTER_PER_MINUTE', 10),
         'passport_forget_per_minute' => (int) env('API_RATE_LIMIT_PASSPORT_FORGET_PER_MINUTE', 10),
         'passport_quick_login_per_minute' => (int) env('API_RATE_LIMIT_PASSPORT_QUICK_LOGIN_PER_MINUTE', 30),

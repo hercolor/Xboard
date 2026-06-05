@@ -17,7 +17,8 @@ class AuthForget extends FormRequest
             'account' => 'nullable|string|max:128',
             'email' => 'nullable|email:strict|required_without:account',
             'password' => 'required|min:8',
-            'email_code' => 'required'
+            'email_code' => 'nullable|required_without:phone_code',
+            'phone_code' => 'nullable|required_without:email_code'
         ];
     }
 
@@ -29,7 +30,8 @@ class AuthForget extends FormRequest
             'email.email' => __('Email format is incorrect'),
             'password.required' => __('Password can not be empty'),
             'password.min' => __('Password must be greater than 8 digits'),
-            'email_code.required' => __('Email verification code cannot be empty')
+            'email_code.required_without' => __('Email verification code cannot be empty'),
+            'phone_code.required_without' => __('Phone verification code cannot be empty')
         ];
     }
 }

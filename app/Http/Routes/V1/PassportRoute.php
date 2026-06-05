@@ -22,6 +22,7 @@ class PassportRoute
             $router->post('/auth/loginWithMailLink', [AuthController::class, 'loginWithMailLink'])->middleware('throttle:passport-email');
             // Comm
             $router->post('/comm/sendEmailVerify', [CommController::class, 'sendEmailVerify'])->middleware('throttle:passport-email');
+            $router->post('/comm/sendPhoneVerify', [CommController::class, 'sendPhoneVerify'])->middleware('throttle:passport-phone');
             $router->post('/comm/pv', [CommController::class, 'pv']);
         });
     }

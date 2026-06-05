@@ -30,6 +30,8 @@ class UserRoute
             $router->get('/info', [UserController::class, 'info'])->middleware('throttle:user-read');
             $router->post('/changePassword', [UserController::class, 'changePassword'])->middleware('throttle:user-mutation');
             $router->post('/update', [UserController::class, 'update'])->middleware('throttle:user-mutation');
+            $router->post('/phone/sendVerify', [UserController::class, 'sendPhoneVerify'])->middleware('throttle:user-mutation');
+            $router->post('/phone/bind', [UserController::class, 'bindPhone'])->middleware('throttle:user-mutation');
             $router->get('/getSubscribe', [UserController::class, 'getSubscribe']);
             $router->get('/getStat', [UserController::class, 'getStat'])->middleware('throttle:user-read');
             $router->get('/checkLogin', [UserController::class, 'checkLogin']);

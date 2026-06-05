@@ -85,11 +85,12 @@ class LoginService
      * 处理密码重置
      *
      * @param string $account 用户邮箱或手机号
-     * @param string $emailCode 邮箱验证码
+     * @param string|null $emailCode 邮箱验证码
      * @param string $password 新密码
+     * @param string|null $phoneCode 手机验证码
      * @return array [成功状态, 结果或错误信息]
      */
-    public function resetPassword(string $account, string $emailCode, string $password): array
+    public function resetPassword(string $account, ?string $emailCode, string $password, ?string $phoneCode = null): array
     {
         $account = trim($account);
         if ($account === '') {
@@ -98,6 +99,8 @@ class LoginService
 
         $user = null;
         $email = null;
+        $phone = null;
+        $isPhoneAccount = false;
         $limitAccount = strtolower($account);
 
         if (str_contains($account, '@')) {
@@ -115,6 +118,7 @@ class LoginService
                 return [false, [400, __('This phone is not registered in the system')]];
             }
             $email = $user->email;
+            $isPhoneAccount = true;
         }
 
         // 检查重置请求限制
@@ -124,10 +128,18 @@ class LoginService
             return [false, [429, __('Reset failed, Please try again later')]];
         }
 
-        // 验证邮箱验证码
-        if ((string) Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email)) !== (string) $emailCode) {
-            Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
-            return [false, [400, __('Incorrect email verification code')]];
+        // 验证验证码
+        if ($isPhoneAccount) {
+            $phoneVerifyKey = CacheKey::get('PHONE_VERIFY_CODE', 'forget:' . sha1((string) $phone));
+            if ((string) Cache::get($phoneVerifyKey) !== (string) $phoneCode) {
+                Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
+                return [false, [400, __('Incorrect phone verification code')]];
+            }
+        } else {
+            if ((string) Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email)) !== (string) $emailCode) {
+                Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
+                return [false, [400, __('Incorrect email verification code')]];
+            }
         }
 
         // 查找用户
@@ -146,8 +158,12 @@ class LoginService
 
         HookManager::call('user.password.reset.after', $user);
 
-        // 清除邮箱验证码
-        Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $email));
+        // 清除验证码
+        if ($isPhoneAccount) {
+            Cache::forget(CacheKey::get('PHONE_VERIFY_CODE', 'forget:' . sha1((string) $phone)));
+        } else {
+            Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $email));
+        }
 
         return [true, true];
     }

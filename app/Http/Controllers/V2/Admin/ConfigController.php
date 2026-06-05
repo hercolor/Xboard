@@ -159,6 +159,15 @@ class ConfigController extends Controller
                 'email_from_address' => admin_setting('email_from_address'),
                 'remind_mail_enable' => (bool) admin_setting('remind_mail_enable', false),
             ],
+            'sms' => [
+                'smsbao_enabled' => (bool) admin_setting('smsbao_enabled', config('services.smsbao.enabled', true)),
+                'smsbao_api_url' => admin_setting('smsbao_api_url', config('services.smsbao.api_url')),
+                'smsbao_username' => admin_setting('smsbao_username', config('services.smsbao.username')),
+                'smsbao_password' => admin_setting('smsbao_password', config('services.smsbao.password')),
+                'smsbao_password_md5' => admin_setting('smsbao_password_md5', config('services.smsbao.password_md5')),
+                'smsbao_sign' => admin_setting('smsbao_sign', config('services.smsbao.sign')),
+                'smsbao_template' => admin_setting('smsbao_template', config('services.smsbao.template')),
+            ],
             'telegram' => [
                 'telegram_bot_enable' => (bool) admin_setting('telegram_bot_enable', 0),
                 'telegram_bot_token' => admin_setting('telegram_bot_token'),

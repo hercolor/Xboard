@@ -4,10 +4,12 @@ namespace App\Http\Controllers\V1\Passport;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\CommSendEmailVerify;
+use App\Http\Requests\Passport\CommSendPhoneVerify;
 use App\Jobs\SendEmailJob;
 use App\Models\InviteCode;
 use App\Models\User;
 use App\Services\CaptchaService;
+use App\Services\Sms\SmsBaoService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
@@ -76,6 +78,41 @@ class CommController extends Controller
 
         Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $email), $code, 300);
         Cache::put(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $email), time(), 60);
+        return $this->success(true);
+    }
+
+    public function sendPhoneVerify(CommSendPhoneVerify $request, SmsBaoService $smsBaoService)
+    {
+        // 验证人机验证码
+        $captchaService = app(CaptchaService::class);
+        [$captchaValid, $captchaError] = $captchaService->verify($request);
+        if (!$captchaValid) {
+            return $this->fail($captchaError);
+        }
+
+        $account = trim((string) ($request->input('account') ?: $request->input('phone')));
+        $phone = User::normalizePhone($account);
+        if (!$phone || !preg_match('/^\+?[0-9]{6,20}$/', $phone)) {
+            return $this->fail([400, __('Phone format is incorrect')]);
+        }
+
+        if (!User::byPhone($phone)->exists()) {
+            return $this->fail([400, __('This phone is not registered in the system')]);
+        }
+
+        $cacheSubject = 'forget:' . sha1($phone);
+        if (Cache::get(CacheKey::get('LAST_SEND_PHONE_VERIFY_TIMESTAMP', $cacheSubject))) {
+            return $this->fail([400, __('Phone verification code has been sent, please request again later')]);
+        }
+
+        $code = (string) random_int(100000, 999999);
+        [$success, $message] = $smsBaoService->sendVerificationCode($phone, $code);
+        if (!$success) {
+            return $this->fail([400, $message ?: __('SMS send failed')]);
+        }
+
+        Cache::put(CacheKey::get('PHONE_VERIFY_CODE', $cacheSubject), $code, 300);
+        Cache::put(CacheKey::get('LAST_SEND_PHONE_VERIFY_TIMESTAMP', $cacheSubject), time(), 60);
         return $this->success(true);
     }
 

@@ -71,6 +71,14 @@ class ConfigSave extends FormRequest
         'email_encryption' => '',
         'email_from_address' => '',
         'remind_mail_enable' => '',
+        // smsbao
+        'smsbao_enabled' => 'boolean',
+        'smsbao_api_url' => 'nullable|url',
+        'smsbao_username' => 'nullable|string',
+        'smsbao_password' => 'nullable|string',
+        'smsbao_password_md5' => 'nullable|string',
+        'smsbao_sign' => 'nullable|string',
+        'smsbao_template' => 'nullable|string',
         // telegram
         'telegram_bot_enable' => '',
         'telegram_bot_token' => '',

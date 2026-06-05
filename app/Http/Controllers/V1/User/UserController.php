@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\UserBindPhone;
 use App\Http\Requests\User\UserChangePassword;
+use App\Http\Requests\User\UserSendPhoneVerify;
 use App\Http\Requests\User\UserTransfer;
 use App\Http\Requests\User\UserUpdate;
 use App\Models\Plan;
@@ -11,6 +13,7 @@ use App\Models\User;
 use App\Services\Auth\LoginService;
 use App\Services\AuthService;
 use App\Services\Plugin\HookManager;
+use App\Services\Sms\SmsBaoService;
 use App\Services\UserService;
 use App\Services\User\LegacyUserInfoReadModel;
 use App\Services\User\LegacyUserStatReadModel;
@@ -76,11 +79,9 @@ class UserController extends Controller
         }
         
         $currentToken = $user->currentAccessToken();
-        if ($currentToken) {
-            $user->tokens()->where('id', '!=', $currentToken->id)->delete();
-        } else {
-            $user->tokens()->delete();
-        }
+        $user->tokens()
+            ->when($currentToken, fn($query) => $query->where('id', '!=', $currentToken->id))
+            ->delete();
         
         return $this->success(true);
     }
@@ -160,6 +161,61 @@ class UserController extends Controller
         return $this->success(true);
     }
 
+    public function sendPhoneVerify(UserSendPhoneVerify $request, SmsBaoService $smsBaoService)
+    {
+        $user = $request->user();
+        $phone = User::normalizePhone($request->input('phone'));
+        if (!$phone || !$this->isValidNormalizedPhone($phone)) {
+            return $this->fail([400, __('Phone format is incorrect')]);
+        }
+
+        if (User::byPhone($phone)->where('id', '!=', $user->id)->exists()) {
+            return $this->fail([400202, __('Phone already exists')]);
+        }
+
+        $cacheSubject = $this->phoneVerifySubject('bind', (int) $user->id, $phone);
+        if (Cache::get(CacheKey::get('LAST_SEND_PHONE_VERIFY_TIMESTAMP', $cacheSubject))) {
+            return $this->fail([400, __('Phone verification code has been sent, please request again later')]);
+        }
+
+        $code = (string) random_int(100000, 999999);
+        [$success, $message] = $smsBaoService->sendVerificationCode($phone, $code);
+        if (!$success) {
+            return $this->fail([400, $message ?: __('SMS send failed')]);
+        }
+
+        Cache::put(CacheKey::get('PHONE_VERIFY_CODE', $cacheSubject), $code, 300);
+        Cache::put(CacheKey::get('LAST_SEND_PHONE_VERIFY_TIMESTAMP', $cacheSubject), time(), 60);
+        return $this->success(true);
+    }
+
+    public function bindPhone(UserBindPhone $request)
+    {
+        $user = $request->user();
+        $phone = User::normalizePhone($request->input('phone'));
+        if (!$phone || !$this->isValidNormalizedPhone($phone)) {
+            return $this->fail([400, __('Phone format is incorrect')]);
+        }
+
+        if (User::byPhone($phone)->where('id', '!=', $user->id)->exists()) {
+            return $this->fail([400202, __('Phone already exists')]);
+        }
+
+        $code = (string) ($request->input('phone_code') ?: $request->input('code'));
+        $cacheSubject = $this->phoneVerifySubject('bind', (int) $user->id, $phone);
+        if ((string) Cache::get(CacheKey::get('PHONE_VERIFY_CODE', $cacheSubject)) !== $code) {
+            return $this->fail([400, __('Incorrect phone verification code')]);
+        }
+
+        $user->phone = $phone;
+        if (!$user->save()) {
+            return $this->fail([400, __('Save failed')]);
+        }
+
+        Cache::forget(CacheKey::get('PHONE_VERIFY_CODE', $cacheSubject));
+        return $this->success(['phone' => $user->phone]);
+    }
+
     public function transfer(UserTransfer $request)
     {
         $amount = $request->input('transfer_amount');
@@ -182,6 +238,16 @@ class UserController extends Controller
             return $this->fail([400, $e->getMessage()]);
         }
         return $this->success(true);
+    }
+
+    private function phoneVerifySubject(string $scene, int $userId, string $phone): string
+    {
+        return $scene . ':' . sha1($userId . '|' . $phone);
+    }
+
+    private function isValidNormalizedPhone(string $phone): bool
+    {
+        return (bool) preg_match('/^\+?[0-9]{6,20}$/', $phone);
     }
 
     public function getQuickLoginUrl(Request $request)

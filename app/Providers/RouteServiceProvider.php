@@ -143,12 +143,23 @@ class RouteServiceProvider extends ServiceProvider
                 ->by($request->ip() . '|email|' . $this->rateLimitKeyFragment($account));
         });
 
+        RateLimiter::for('passport-phone', function (Request $request) {
+            if (!$this->apiRateLimitsEnabled()) {
+                return Limit::none();
+            }
+
+            $account = strtolower((string) ($request->input('account') ?: $request->input('phone', 'anonymous')));
+
+            return Limit::perMinute((int) config('api_security.rate_limits.passport_phone_per_minute', 3))
+                ->by($request->ip() . '|phone|' . $this->rateLimitKeyFragment($account));
+        });
+
         RateLimiter::for('passport-register', function (Request $request) {
             if (!$this->apiRateLimitsEnabled()) {
                 return Limit::none();
             }
 
-            $account = strtolower((string) ($request->input('phone') ?: $request->input('email', 'anonymous')));
+            $account = strtolower((string) $request->input('email', 'anonymous'));
 
             return Limit::perMinute((int) config('api_security.rate_limits.passport_register_per_minute', 10))
                 ->by($request->ip() . '|register|' . $this->rateLimitKeyFragment($account));

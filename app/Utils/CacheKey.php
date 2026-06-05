@@ -8,6 +8,8 @@ class CacheKey
     const CORE_KEYS = [
         'EMAIL_VERIFY_CODE' => '邮箱验证码',
         'LAST_SEND_EMAIL_VERIFY_TIMESTAMP' => '最后一次发送邮箱验证码时间',
+        'PHONE_VERIFY_CODE' => '手机验证码',
+        'LAST_SEND_PHONE_VERIFY_TIMESTAMP' => '最后一次发送手机验证码时间',
         'TEMP_TOKEN' => '临时令牌',
         'LAST_SEND_EMAIL_REMIND_TRAFFIC' => '最后发送流量邮件提醒',
         'SCHEDULE_LAST_CHECK_AT' => '计划任务最后检查时间',

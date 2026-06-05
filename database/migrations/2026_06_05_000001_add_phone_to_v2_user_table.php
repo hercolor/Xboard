@@ -19,7 +19,7 @@ return new class extends Migration
     {
         Schema::table('v2_user', function (Blueprint $table) {
             if (Schema::hasColumn('v2_user', 'phone')) {
-                $table->dropUnique('phone');
+                $table->dropUnique(['phone']);
                 $table->dropColumn('phone');
             }
         });

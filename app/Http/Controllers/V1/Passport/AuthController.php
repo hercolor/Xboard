@@ -165,7 +165,8 @@ class AuthController extends Controller
         [$success, $result] = $this->loginService->resetPassword(
             $account,
             $request->input('email_code'),
-            $request->input('password')
+            $request->input('password'),
+            $request->input('phone_code')
         );
 
         if (!$success) {
