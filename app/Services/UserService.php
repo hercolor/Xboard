@@ -47,15 +47,27 @@ class UserService
 
     public function isAvailable(User $user)
     {
-        if (!$user->banned && $user->transfer_enable && ($user->expired_at > time() || $user->expired_at === NULL)) {
-            return true;
+        if ($user->banned || $user->plan_id === null) {
+            return false;
         }
-        return false;
+
+        $transferEnable = (int) ($user->transfer_enable ?? 0);
+        if ($transferEnable <= 0) {
+            return false;
+        }
+
+        $usedTraffic = (int) ($user->u ?? 0) + (int) ($user->d ?? 0);
+        if ($usedTraffic >= $transferEnable) {
+            return false;
+        }
+
+        return $user->expired_at === null || (int) $user->expired_at > time();
     }
 
     public function getAvailableUsers()
     {
-        return User::whereRaw('u + d < transfer_enable')
+        return User::whereNotNull('plan_id')
+            ->whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
                 $query->where('expired_at', '>=', time())
                     ->orWhere('expired_at', NULL);
@@ -67,13 +79,16 @@ class UserService
     public function getUnAvailbaleUsers()
     {
         return User::where(function ($query) {
-            $query->where('expired_at', '<', time())
-                ->orWhere('expired_at', 0);
+            $query->where('banned', 1)
+                ->orWhere('transfer_enable', '<=', 0)
+                ->orWhereRaw('u + d >= transfer_enable')
+                ->orWhere(function ($query) {
+                    $query->whereNotNull('expired_at')
+                        ->where('expired_at', '<', time());
+                })
+                ->orWhere('expired_at', 0)
+                ->orWhereNull('plan_id');
         })
-            ->where(function ($query) {
-                $query->where('plan_id', NULL)
-                    ->orWhere('transfer_enable', 0);
-            })
             ->get();
     }
 

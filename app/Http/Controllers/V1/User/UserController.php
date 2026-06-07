@@ -114,11 +114,16 @@ class UserController extends Controller
                 'uuid',
                 'device_limit',
                 'speed_limit',
-                'next_reset_at'
+                'next_reset_at',
+                'banned'
             ])
             ->first();
         if (!$user) {
             return $this->fail([400, __('The user does not exist')]);
+        }
+        $userService = new UserService();
+        if (!$userService->isAvailable($user)) {
+            return $this->fail([403, __('Subscription has expired or traffic has been exhausted')]);
         }
         if ($user->plan_id) {
             $user['plan'] = Plan::find($user->plan_id);
@@ -127,7 +132,6 @@ class UserController extends Controller
             }
         }
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
-        $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);
         $user = HookManager::filter('user.subscribe.response', $user);
         return $this->success($user);
