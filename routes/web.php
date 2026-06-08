@@ -34,6 +34,13 @@ Route::get('/rules/sing-box/{file}', function (string $file) {
     ]);
 })->where('file', 'geosite-cn\.srs|geoip-cn\.srs')->name('rules.sing-box');
 
+Route::get('/appcast.xml', [\App\Http\Controllers\App\V1\ClientVersionController::class, 'appcast'])
+    ->name('client-version.appcast');
+Route::get('/app/releases', [\App\Http\Controllers\App\V1\ClientVersionController::class, 'releases'])
+    ->name('client-version.releases');
+Route::get('/app/latest', [\App\Http\Controllers\App\V1\ClientVersionController::class, 'latest'])
+    ->name('client-version.latest');
+
 //TODO:: 兼容
 Route::get('/' . admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key')))), function () {
     return view('admin', [
