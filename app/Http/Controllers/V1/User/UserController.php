@@ -17,6 +17,7 @@ use App\Services\Sms\SmsBaoService;
 use App\Services\UserService;
 use App\Services\User\LegacyUserInfoReadModel;
 use App\Services\User\LegacyUserStatReadModel;
+use App\Services\User\MembershipStatusService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
@@ -100,10 +101,11 @@ class UserController extends Controller
         return $this->success($readModel->forUserId((int) $request->user()->id));
     }
 
-    public function getSubscribe(Request $request)
+    public function getSubscribe(Request $request, MembershipStatusService $membershipStatusService)
     {
         $user = User::where('id', $request->user()->id)
             ->select([
+                'id',
                 'plan_id',
                 'token',
                 'expired_at',
@@ -122,17 +124,15 @@ class UserController extends Controller
             return $this->fail([400, __('The user does not exist')]);
         }
         $userService = new UserService();
-        if (!$userService->isAvailable($user)) {
-            return $this->fail([403, __('Subscription has expired or traffic has been exhausted')]);
-        }
+        $membership = $membershipStatusService->build($user);
         if ($user->plan_id) {
             $user['plan'] = Plan::find($user->plan_id);
-            if (!$user['plan']) {
-                return $this->fail([400, __('Subscription plan does not exist')]);
-            }
         }
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
         $user['reset_day'] = $userService->getResetDay($user);
+        foreach ($membership as $key => $value) {
+            $user[$key] = $value;
+        }
         $user = HookManager::filter('user.subscribe.response', $user);
         return $this->success($user);
     }

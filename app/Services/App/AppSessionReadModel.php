@@ -5,9 +5,15 @@ declare(strict_types=1);
 namespace App\Services\App;
 
 use App\Models\User;
+use App\Services\User\MembershipStatusService;
 
 final class AppSessionReadModel
 {
+    public function __construct(
+        private readonly MembershipStatusService $membershipStatusService
+    ) {
+    }
+
     /**
      * Build the safe App BFF session payload from the authenticated user model.
      *
@@ -61,10 +67,17 @@ final class AppSessionReadModel
      */
     private function subscriptionPayload(User $user, array $traffic): array
     {
+        $membership = $this->membershipStatusService->build($user);
+
         return [
-            'status' => $this->subscriptionStatus($user, $traffic['remaining']),
+            'status' => $membership['subscription_status'],
+            'membership_status' => $membership['membership_status'],
+            'membership_label' => $membership['membership_label'],
+            'is_member' => $membership['is_member'],
+            'can_connect' => $membership['can_connect'],
             'active' => $user->isActive(),
             'plan_id' => $user->plan_id,
+            'plan_name' => $membership['plan_name'],
             'expired_at' => $user->expired_at,
             'next_reset_at' => $user->next_reset_at,
             'device_limit' => $user->device_limit,
@@ -111,24 +124,4 @@ final class AppSessionReadModel
         ];
     }
 
-    private function subscriptionStatus(User $user, int $remainingTraffic): string
-    {
-        if ($user->banned) {
-            return 'banned';
-        }
-
-        if (!$user->plan_id) {
-            return 'no_plan';
-        }
-
-        if ($user->expired_at !== null && $user->expired_at <= time()) {
-            return 'expired';
-        }
-
-        if ($remainingTraffic <= 0) {
-            return 'traffic_exhausted';
-        }
-
-        return 'active';
-    }
 }

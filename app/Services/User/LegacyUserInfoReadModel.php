@@ -7,6 +7,7 @@ use App\Models\User;
 class LegacyUserInfoReadModel
 {
     public const COLUMNS = [
+        'id',
         'email',
         'phone',
         'transfer_enable',
@@ -16,6 +17,11 @@ class LegacyUserInfoReadModel
         'remind_expire',
         'remind_traffic',
         'expired_at',
+        'u',
+        'd',
+        'device_limit',
+        'speed_limit',
+        'next_reset_at',
         'balance',
         'commission_balance',
         'plan_id',
@@ -24,6 +30,11 @@ class LegacyUserInfoReadModel
         'telegram_id',
         'uuid',
     ];
+
+    public function __construct(
+        private readonly MembershipStatusService $membershipStatusService
+    ) {
+    }
 
     /**
      * @return array<string, mixed>|null
@@ -39,6 +50,11 @@ class LegacyUserInfoReadModel
         }
 
         $payload = $user->toArray();
+        $membership = $this->membershipStatusService->build($user);
+        foreach ($membership as $key => $value) {
+            $payload[$key] = $value;
+        }
+        $payload['plan'] = $membership['membership_label'];
         $payload['avatar_url'] = $this->avatarUrl((string) $user->email);
 
         return $payload;
