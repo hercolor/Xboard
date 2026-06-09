@@ -6,6 +6,7 @@ use App\Models\Server;
 use App\Models\ServerMachine;
 use App\Support\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -19,10 +20,13 @@ class ServerHandshakeTest extends TestCase
         parent::setUp();
 
         config()->set('app.key', 'base64:' . base64_encode(str_repeat('a', 32)));
+        config()->set('cache.default', 'array');
         Cache::forever('admin_settings', [
             'server_token' => 'server-token',
             'server_ws_enable' => 0,
         ]);
+
+        $this->withoutMiddleware(ThrottleRequests::class);
 
         app()->forgetInstance(Setting::class);
     }

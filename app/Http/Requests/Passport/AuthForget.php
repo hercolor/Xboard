@@ -15,23 +15,24 @@ class AuthForget extends FormRequest
     {
         return [
             'account' => 'nullable|string|max:128',
-            'email' => 'nullable|email:strict|required_without:account',
+            'phone' => 'nullable|string|max:32',
+            'email' => 'nullable|email:strict|required_without_all:account,phone',
             'password' => 'required|min:8',
-            'email_code' => 'nullable|required_without:phone_code',
-            'phone_code' => 'nullable|required_without:email_code'
+            'email_code' => 'nullable|string|min:4|max:8|required_without_all:phone_code,code',
+            'phone_code' => 'nullable|string|min:4|max:8|required_without_all:email_code,code',
+            'code' => 'nullable|string|min:4|max:8'
         ];
     }
 
     public function messages()
     {
         return [
-            'account.required_without' => __('Account can not be empty'),
-            'email.required_without' => __('Email can not be empty'),
+            'email.required_without_all' => __('Account can not be empty'),
             'email.email' => __('Email format is incorrect'),
             'password.required' => __('Password can not be empty'),
             'password.min' => __('Password must be greater than 8 digits'),
-            'email_code.required_without' => __('Email verification code cannot be empty'),
-            'phone_code.required_without' => __('Phone verification code cannot be empty')
+            'email_code.required_without_all' => __('Verification code cannot be empty'),
+            'phone_code.required_without_all' => __('Verification code cannot be empty')
         ];
     }
 }

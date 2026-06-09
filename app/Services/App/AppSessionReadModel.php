@@ -82,7 +82,7 @@ final class AppSessionReadModel
             'next_reset_at' => $user->next_reset_at,
             'device_limit' => $user->device_limit,
             'speed_limit' => $user->speed_limit,
-            'delivery_available' => !empty($user->token),
+            'delivery_available' => (bool) $membership['can_connect'],
         ];
     }
 

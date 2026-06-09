@@ -124,15 +124,22 @@ class UserController extends Controller
             return $this->fail([400, __('The user does not exist')]);
         }
         $userService = new UserService();
-        $membership = $membershipStatusService->build($user);
         if ($user->plan_id) {
-            $user['plan'] = Plan::find($user->plan_id);
+            $plan = Plan::find($user->plan_id);
+            if ($plan) {
+                $user->setRelation('plan', $plan);
+            }
+            $user['plan'] = $plan;
         }
-        $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
+        $membership = $membershipStatusService->build($user);
+        $user['subscribe_url'] = $membership['can_connect']
+            ? Helper::getSubscribeUrl($user['token'])
+            : '';
         $user['reset_day'] = $userService->getResetDay($user);
         foreach ($membership as $key => $value) {
             $user[$key] = $value;
         }
+        $user['delivery_available'] = (bool) $membership['can_connect'];
         $user = HookManager::filter('user.subscribe.response', $user);
         return $this->success($user);
     }

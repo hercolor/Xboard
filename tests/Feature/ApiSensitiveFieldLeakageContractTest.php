@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Services\App\AppSessionReadModel;
 use App\Services\User\LegacyOrderReadModel;
 use App\Services\User\LegacyTrafficReadModel;
+use App\Services\User\MembershipStatusService;
 use Tests\Support\AppApi\AppBffFixtures;
 use Tests\TestCase;
 
@@ -14,7 +15,7 @@ final class ApiSensitiveFieldLeakageContractTest extends TestCase
 {
     public function test_app_session_payload_excludes_legacy_delivery_secrets(): void
     {
-        $payload = (new AppSessionReadModel())->forUser(AppBffFixtures::user());
+        $payload = (new AppSessionReadModel(new MembershipStatusService()))->forUser(AppBffFixtures::user());
         $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
 
         foreach (AppBffFixtures::sensitiveNeedles() as $needle) {

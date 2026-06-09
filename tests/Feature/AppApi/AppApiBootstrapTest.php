@@ -8,6 +8,7 @@ use App\Http\Middleware\AppApiResponseBoundary;
 use App\Http\Middleware\InitializePlugins;
 use App\Services\App\AppSessionReadModel;
 use App\Services\User\LegacyUserInfoReadModel;
+use App\Services\User\MembershipStatusService;
 use Illuminate\Routing\Route;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\AppApi\AppBffFixtures;
@@ -192,8 +193,8 @@ final class AppApiBootstrapTest extends TestCase
                 'code',
                 'message',
                 'data' => [
-                    'user' => ['id', 'email', 'avatar_url', 'is_admin', 'is_staff', 'banned', 'created_at', 'last_login_at', 'telegram_bound'],
-                    'subscription' => ['status', 'active', 'plan_id', 'expired_at', 'next_reset_at', 'device_limit', 'speed_limit', 'delivery_available'],
+                    'user' => ['id', 'email', 'phone', 'avatar_url', 'is_admin', 'is_staff', 'banned', 'created_at', 'last_login_at', 'telegram_bound'],
+                    'subscription' => ['status', 'membership_status', 'membership_label', 'is_member', 'can_connect', 'active', 'plan_id', 'plan_name', 'expired_at', 'next_reset_at', 'device_limit', 'speed_limit', 'delivery_available'],
                     'traffic' => ['upload', 'download', 'used', 'total', 'remaining', 'usage_percent'],
                     'preferences' => ['remind_expire', 'remind_traffic'],
                 ],
@@ -208,15 +209,15 @@ final class AppApiBootstrapTest extends TestCase
 
     public function test_session_read_model_is_allowlist_only_and_safe_for_future_dashboard_reuse(): void
     {
-        $payload = (new AppSessionReadModel())->forUser(AppBffFixtures::user());
+        $payload = (new AppSessionReadModel(new MembershipStatusService()))->forUser(AppBffFixtures::user());
 
         $this->assertSame(['user', 'subscription', 'traffic', 'preferences'], array_keys($payload));
         $this->assertSame(
-            ['id', 'email', 'avatar_url', 'is_admin', 'is_staff', 'banned', 'created_at', 'last_login_at', 'telegram_bound'],
+            ['id', 'email', 'phone', 'avatar_url', 'is_admin', 'is_staff', 'banned', 'created_at', 'last_login_at', 'telegram_bound'],
             array_keys($payload['user'])
         );
         $this->assertSame(
-            ['status', 'active', 'plan_id', 'expired_at', 'next_reset_at', 'device_limit', 'speed_limit', 'delivery_available'],
+            ['status', 'membership_status', 'membership_label', 'is_member', 'can_connect', 'active', 'plan_id', 'plan_name', 'expired_at', 'next_reset_at', 'device_limit', 'speed_limit', 'delivery_available'],
             array_keys($payload['subscription'])
         );
 
@@ -258,7 +259,9 @@ final class AppApiBootstrapTest extends TestCase
         $this->assertStringContainsString('LegacyUserInfoReadModel $readModel', $controllerSource);
 
         $this->assertSame([
+            'id',
             'email',
+            'phone',
             'transfer_enable',
             'last_login_at',
             'created_at',
@@ -266,6 +269,11 @@ final class AppApiBootstrapTest extends TestCase
             'remind_expire',
             'remind_traffic',
             'expired_at',
+            'u',
+            'd',
+            'device_limit',
+            'speed_limit',
+            'next_reset_at',
             'balance',
             'commission_balance',
             'plan_id',
@@ -284,7 +292,7 @@ final class AppApiBootstrapTest extends TestCase
             "'device_limit'",
             "'speed_limit'",
             "'next_reset_at'",
-            '$user[\'subscribe_url\'] = Helper::getSubscribeUrl($user[\'token\']);',
+            '$user[\'subscribe_url\'] = $membership[\'can_connect\']',
             'HookManager::filter(\'user.subscribe.response\', $user)',
         ] as $expectedSubscribeFragment) {
             $this->assertStringContainsString($expectedSubscribeFragment, $controllerSource);

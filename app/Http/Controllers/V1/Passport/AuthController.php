@@ -71,7 +71,7 @@ class AuthController extends Controller
      */
     public function login(AuthLogin $request)
     {
-        $account = $request->input('account') ?: $request->input('email');
+        $account = $request->input('account') ?: $request->input('phone') ?: $request->input('email');
         $password = $request->input('password');
 
         [$success, $result] = $this->loginService->login($account, $password);
@@ -160,13 +160,24 @@ class AuthController extends Controller
      */
     public function forget(AuthForget $request)
     {
-        $account = $request->input('account') ?: $request->input('email');
+        $account = $request->input('account') ?: $request->input('phone') ?: $request->input('email');
+        $code = $request->input('code');
+        $emailCode = $request->input('email_code');
+        $phoneCode = $request->input('phone_code');
+
+        if (!$emailCode && !$phoneCode && $code) {
+            if ($request->input('phone') || !str_contains((string) $account, '@')) {
+                $phoneCode = $code;
+            } else {
+                $emailCode = $code;
+            }
+        }
 
         [$success, $result] = $this->loginService->resetPassword(
             $account,
-            $request->input('email_code'),
+            $emailCode,
             $request->input('password'),
-            $request->input('phone_code')
+            $phoneCode
         );
 
         if (!$success) {

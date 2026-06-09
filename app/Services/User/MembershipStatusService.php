@@ -27,8 +27,8 @@ class MembershipStatusService
     {
         $remainingTraffic = $this->remainingTraffic($user);
         $subscriptionStatus = $this->subscriptionStatus($user, $remainingTraffic);
-        $membershipStatus = $this->membershipStatus($user, $subscriptionStatus);
-        $plan = $user->plan_id ? $user->plan : null;
+        $plan = $user->relationLoaded('plan') ? $user->getRelation('plan') : null;
+        $membershipStatus = $this->membershipStatus($user, $subscriptionStatus, $plan instanceof Plan ? $plan : null);
 
         return [
             'membership_status' => $membershipStatus,
@@ -69,7 +69,7 @@ class MembershipStatusService
         return 'active';
     }
 
-    private function membershipStatus(User $user, string $subscriptionStatus): string
+    private function membershipStatus(User $user, string $subscriptionStatus, ?Plan $plan = null): string
     {
         if (!$user->plan_id) {
             return self::STATUS_NORMAL;
@@ -79,7 +79,7 @@ class MembershipStatusService
             return self::STATUS_EXPIRED;
         }
 
-        return $this->detectActivePeriod($user);
+        return $this->detectActivePeriod($user, $plan);
     }
 
     private function membershipLabel(string $membershipStatus): string
@@ -93,7 +93,7 @@ class MembershipStatusService
         };
     }
 
-    private function detectActivePeriod(User $user): string
+    private function detectActivePeriod(User $user, ?Plan $plan = null): string
     {
         $period = $this->latestCompletedPeriod($user);
         $status = $this->statusFromPeriod($period);
@@ -101,7 +101,6 @@ class MembershipStatusService
             return $status;
         }
 
-        $plan = $user->plan_id ? $user->plan : null;
         $status = $this->statusFromPlanName($plan?->name);
         if ($status !== null) {
             return $status;
