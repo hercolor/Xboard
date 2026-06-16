@@ -17,7 +17,7 @@ final class SingBoxTemplateContractTest extends TestCase
                 $this->assertArrayNotHasKey(
                     'clash_mode',
                     $rule,
-                    sprintf('%s.rules[%d].clash_mode is intentionally omitted for 4376 APP import compatibility', $section, $index)
+                    sprintf('%s.rules[%d].clash_mode is intentionally omitted for 蝴蝶加速 APP import compatibility', $section, $index)
                 );
 
                 $arrayFields = $section === 'dns'
